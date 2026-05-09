@@ -1,7 +1,9 @@
 export async function onRequestGet(context) {
   const { env } = context;
   const token = env.META_ACCESS_TOKEN;
-  const adAccountId = env.AD_ACCOUNT_ID;
+  // fix: AD_ACCOUNT_ID 可能已含 act_ 前綴（如 "act_123456"），統一去掉再重新拼，避免 act_act_ 重複
+  const rawAdAccountId = env.AD_ACCOUNT_ID || '';
+  const adAccountId = rawAdAccountId.replace(/^act_/, '');
 
   function classifyContent(caption) {
     const text = (caption || '').toLowerCase();
@@ -192,9 +194,11 @@ export async function onRequestGet(context) {
             cost_per_message: costPerMsg
           };
 
-          // 雙重索引：permalink 比對
+          // 雙重索引：permalink 比對（含尾斜線正規化）
           if (igUrl) {
-            adPermalinkMap[igUrl] = adEntry;
+            const normalizedUrl = igUrl.replace(/\/$/, '');
+            adPermalinkMap[normalizedUrl] = adEntry;
+            adPermalinkMap[normalizedUrl + '/'] = adEntry;
           }
           // 雙重索引：video_id 比對（creative.video_id vs media.id）
           if (videoId) {
@@ -235,7 +239,7 @@ export async function onRequestGet(context) {
           setTimeout(() => reject(new Error('comments timeout')), 2000)
         );
         const commentsRes = await Promise.race([
-          fetch(`https://graph.facebook.com/v25.0/${m.id}/comments?fields=id,text&limit=100&access_token=${token}`),
+          fetch(`https://graph.facebook.com/v25.0/${m.id}/comments?fields=id,text&summary=true&limit=100&access_token=${token}`),
           commentsTimeout
         ]);
         const commentsData = await commentsRes.json();
@@ -264,7 +268,10 @@ export async function onRequestGet(context) {
 
       // 6. 廣告交叉比對：permalink 優先，fallback video_id
       let adData = null;
-      if (m.permalink && adPermalinkMap[m.permalink]) {
+      const normalizedPermalink = (m.permalink || '').replace(/\/$/, '');
+      if (normalizedPermalink && adPermalinkMap[normalizedPermalink]) {
+        adData = adPermalinkMap[normalizedPermalink];
+      } else if (m.permalink && adPermalinkMap[m.permalink]) {
         adData = adPermalinkMap[m.permalink];
       } else if (m.id && adVideoIdMap[m.id]) {
         adData = adVideoIdMap[m.id];
@@ -302,6 +309,9 @@ export async function onRequestGet(context) {
         avg_watch_sec: watchSec,
         save_rate: Math.round(saveRate * 10) / 10,
         share_rate: Math.round(shareRate * 10) / 10,
+        comments: intentCount,
+        totalComments: totalComments,
+        buyIntentComments: intentCount,
         intent_comments: intentCount,
         total_comments: totalComments,
         score: totalScore,
