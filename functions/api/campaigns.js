@@ -1,7 +1,13 @@
 export async function onRequestGet(context) {
-  const { env } = context;
+  const { env, request } = context;
   const TOKEN = env.META_ACCESS_TOKEN;
   const ACCOUNT = env.META_AD_ACCOUNT_ID || "act_893698616001048";
+
+  // 支援前端傳入 date_preset，預設 last_30d
+  const url = new URL(request.url);
+  const ALLOWED_PRESETS = ["last_7d", "last_30d", "last_90d", "this_month"];
+  const rawPreset = url.searchParams.get("date_preset") || "last_30d";
+  const DATE_PRESET = ALLOWED_PRESETS.includes(rawPreset) ? rawPreset : "last_30d";
 
   try {
     const [campaignsRes, insightsRes] = await Promise.all([
@@ -11,7 +17,7 @@ export async function onRequestGet(context) {
       fetch(
         `https://graph.facebook.com/v25.0/${ACCOUNT}/insights?` +
         `fields=campaign_id,campaign_name,spend,reach,impressions,actions,action_values,cost_per_action_type` +
-        `&level=campaign&date_preset=last_30d&limit=50&access_token=${TOKEN}`
+        `&level=campaign&date_preset=${DATE_PRESET}&limit=50&access_token=${TOKEN}`
       )
     ]);
 

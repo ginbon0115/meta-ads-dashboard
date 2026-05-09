@@ -308,7 +308,25 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
 <!-- TAB 1: 廣告成效 -->
 <div class="tab-content active" id="content-overview">
 
-  <p class="section-title" style="margin-bottom:14px;">本月總覽（過去 30 天）</p>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+    <p class="section-title" style="margin:0;" id="overviewTitle">本月總覽（過去 30 天）</p>
+    <select id="datePresetSelect" onchange="onDatePresetChange(this.value)" style="
+      background:#1e1e1e;
+      color:#e0e0e0;
+      border:1px solid #333;
+      border-radius:8px;
+      padding:5px 10px;
+      font-size:13px;
+      cursor:pointer;
+      outline:none;
+      accent-color:#E8843A;
+    ">
+      <option value="last_7d">過去 7 天</option>
+      <option value="last_30d" selected>過去 30 天</option>
+      <option value="last_90d">過去 90 天</option>
+      <option value="this_month">本月</option>
+    </select>
+  </div>
   <div class="summary-kpi-grid">
     <div class="kpi-card">
       <div class="kpi-icon"><i class="ph ph-currency-circle-dollar"></i></div>
@@ -792,11 +810,28 @@ function renderCampaignSections(data) {
   document.getElementById('campaignSections').innerHTML = html;
 }
 
+// 時間範圍標籤對應
+const PRESET_LABELS = {
+  last_7d:    '過去 7 天',
+  last_30d:   '過去 30 天',
+  last_90d:   '過去 90 天',
+  this_month: '本月',
+};
+
+let currentDatePreset = 'last_30d';
+
+function onDatePresetChange(preset) {
+  currentDatePreset = preset;
+  const label = PRESET_LABELS[preset] || preset;
+  document.getElementById('overviewTitle').textContent = `本月總覽（${label}）`;
+  loadData(false);
+}
+
 async function loadData(manual = false) {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('spinning'); btn.disabled = true;
   try {
-    const res = await fetch('/api/campaigns');
+    const res = await fetch('/api/campaigns?date_preset=' + currentDatePreset);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     campaigns = json.data || [];
