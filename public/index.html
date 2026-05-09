@@ -1153,9 +1153,24 @@ async function loadOrganicReels() {
       <span>💬 <b style="color:${r.intent_comments > 0 ? '#e85d04' : '#999'}">${r.intent_comments} 則購買意圖留言</b>／共 ${r.total_comments} 則</span>
     </div>
 
+    <!-- 廣告標籤 -->
+    <div style="margin-bottom:8px;">
+      ${r.ad_data ? `
+      <span style="background:#F97316; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">
+        <i class="ph ph-megaphone" style="font-size:12px;"></i>
+        已投廣 NT$${r.ad_data.cost_per_message !== null ? r.ad_data.cost_per_message.toFixed(0) + '/私訊' : r.ad_data.spend + ' 花費'}
+      </span>
+      ` : `
+      <span style="background:#e0e0e0; color:#777; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px;">未投廣</span>
+      `}
+    </div>
+
     <!-- 分數說明列（小字） -->
     <div style="font-size:11px; color:#aaa; margin-bottom:10px;">
-      評分依據：留言意圖 ${r.score_breakdown?.intent ?? '-'}分 ＋ 儲存 ${r.score_breakdown?.save ?? '-'}分 ＋ 觀看 ${r.score_breakdown?.watch ?? '-'}分 ＋ 播放 ${r.score_breakdown?.plays ?? '-'}分
+      ${r.ad_data
+        ? `評分依據（廣告實績）：基礎 ${r.score_breakdown?.ad_base ?? 60}分 ＋ 每私訊成本加分 ${r.score_breakdown?.ad_cpp_bonus ?? '-'}分 ＋ 私訊量加分 ${r.score_breakdown?.ad_msg_bonus ?? 0}分`
+        : `評分依據（有機）：留言意圖 ${r.score_breakdown?.intent ?? '-'}分 ＋ 儲存 ${r.score_breakdown?.save ?? '-'}分 ＋ 觀看 ${r.score_breakdown?.watch ?? '-'}分 ＋ 播放 ${r.score_breakdown?.plays ?? '-'}分`
+      }
     </div>
 
     <!-- 廣告建議（只有 grade_show_ad === true 才顯示） -->
