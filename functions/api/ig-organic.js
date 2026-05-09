@@ -154,44 +154,56 @@ export async function onRequestGet(context) {
       .filter(m => m.media_type === 'VIDEO' || m.media_product_type === 'REELS')
       .slice(0, 100);
 
-    // 4. 拉廣告素材，做 permalink 比對
-    let adPermalinkMap = {};
+    // 4. 拉廣告素材，做 permalink + video_id 雙重比對
+    let adPermalinkMap = {};  // key: permalink URL
+    let adVideoIdMap = {};    // key: video_id
     if (adAccountId) {
       try {
         const adsRes = await fetch(
-          `https://graph.facebook.com/v19.0/act_${adAccountId}/ads` +
-          `?fields=id,name,creative{instagram_permalink_url,video_id},insights{spend,actions}` +
-          `&date_preset=last_90d&limit=100&access_token=${token}`
+          `https://graph.facebook.com/v25.0/act_${adAccountId}/ads` +
+          `?fields=id,name,creative{id,instagram_permalink_url,video_id},insights.date_preset(last_90d){spend,actions}` +
+          `&limit=100&access_token=${token}`
         );
         const adsData = await adsRes.json();
         for (const ad of (adsData.data || [])) {
           const igUrl = ad.creative?.instagram_permalink_url;
-          if (!igUrl) continue;
+          const videoId = ad.creative?.video_id;
 
           const insights = ad.insights?.data?.[0] || {};
           const spendUSD = parseFloat(insights.spend || 0);
           const spend = Math.round(spendUSD * 30); // USD → NT$
           const actions = insights.actions || [];
+          // fix: 新增 messaging_first_reply 作為第三種匹配
           const msgAction = actions.find(a =>
             a.action_type === 'onsite_conversion.messaging_conversation_started_7d' ||
-            a.action_type === 'onsite_conversion.total_messaging_connection'
+            a.action_type === 'onsite_conversion.total_messaging_connection' ||
+            a.action_type === 'onsite_conversion.messaging_first_reply'
           );
           const msgCount = parseInt(msgAction?.value || 0);
           const costPerMsg = msgCount > 0 ? Math.round(spend / msgCount * 100) / 100 : null;
 
-          adPermalinkMap[igUrl] = {
+          const adEntry = {
             ad_name: ad.name,
             spend,
             messages: msgCount,
             cost_per_message: costPerMsg
           };
+
+          // 雙重索引：permalink 比對
+          if (igUrl) {
+            adPermalinkMap[igUrl] = adEntry;
+          }
+          // 雙重索引：video_id 比對（creative.video_id vs media.id）
+          if (videoId) {
+            adVideoIdMap[videoId] = adEntry;
+          }
         }
       } catch (e) {
         // 廣告 API 失敗不影響主流程
       }
     }
 
-    // 5. 查所有影片的 insights
+    // 5. 查所有影片的 insights + 留言
     const reels = await Promise.all(videoMedia.map(async (m) => {
       let totalTime = 0, reach = 0, saved = 0, shares = 0, avgWatch = 0;
       try {
@@ -211,15 +223,18 @@ export async function onRequestGet(context) {
         }
       } catch (e) {}
 
-      // 抓留言（最多100則）
+      // fix: 留言抓取獨立 try/catch，確保 comments 一定被執行並取得結果
       let comments = [];
       let intentCount = 0;
+      let totalComments = 0;
       try {
         const commentsRes = await fetch(
           `https://graph.facebook.com/v25.0/${m.id}/comments?fields=id,text&limit=100&access_token=${token}`
         );
         const commentsData = await commentsRes.json();
         comments = commentsData.data || [];
+        // fix: 優先用 API 回傳的 summary.total_count，fallback 用 data 長度
+        totalComments = commentsData.summary?.total_count ?? comments.length;
 
         const intentKeywords = [
           '連結', '想買', '+1', '🔥', '加入', '團購', '在哪', '哪裡買',
@@ -231,16 +246,22 @@ export async function onRequestGet(context) {
           const text = (c.text || '');
           return intentKeywords.some(k => text.includes(k));
         }).length;
-      } catch (e) {}
+      } catch (e) {
+        // 留言 API 失敗：totalComments 保持 0，不影響主流程
+      }
 
-      const totalComments = comments.length;
       const plays = avgWatch > 0 ? Math.round(totalTime / avgWatch) : 0;
       const saveRate = reach > 0 ? saved / reach * 100 : 0;
       const shareRate = reach > 0 ? shares / reach * 100 : 0;
       const watchSec = Math.round(avgWatch / 1000);
 
-      // 6. 廣告交叉比對
-      const adData = m.permalink ? (adPermalinkMap[m.permalink] || null) : null;
+      // 6. 廣告交叉比對：permalink 優先，fallback video_id
+      let adData = null;
+      if (m.permalink && adPermalinkMap[m.permalink]) {
+        adData = adPermalinkMap[m.permalink];
+      } else if (m.id && adVideoIdMap[m.id]) {
+        adData = adVideoIdMap[m.id];
+      }
 
       // 7. 依有無廣告數據走不同評分邏輯
       let scoreData, totalScore;
