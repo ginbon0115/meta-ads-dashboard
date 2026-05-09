@@ -135,12 +135,15 @@ export async function onRequestGet(context) {
     let nextUrl = `https://graph.facebook.com/v25.0/${igId}/media?` +
       `fields=id,caption,media_type,media_product_type,timestamp,permalink` +
       `&limit=50&access_token=${token}`;
+    let pageCount = 0;
+    const MAX_PAGES = 3; // 最多抓 3 頁（150 筆），避免 CF Function 超時
 
-    while (nextUrl && allMedia.length < 500) {
+    while (nextUrl && allMedia.length < 500 && pageCount < MAX_PAGES) {
       const mediaRes = await fetch(nextUrl);
       const mediaData = await mediaRes.json();
       const pageItems = mediaData.data || [];
       allMedia = allMedia.concat(pageItems);
+      pageCount++;
 
       if (mediaData.paging && mediaData.paging.next) {
         nextUrl = mediaData.paging.next;
@@ -152,7 +155,7 @@ export async function onRequestGet(context) {
     // 3. 過濾影片，上限 100 支
     const videoMedia = allMedia
       .filter(m => m.media_type === 'VIDEO' || m.media_product_type === 'REELS')
-      .slice(0, 100);
+      .slice(0, 50); // 最多處理 50 支影片，控制總請求數
 
     // 4. 拉廣告素材，做 permalink + video_id 雙重比對
     let adPermalinkMap = {};  // key: permalink URL
@@ -228,9 +231,13 @@ export async function onRequestGet(context) {
       let intentCount = 0;
       let totalComments = 0;
       try {
-        const commentsRes = await fetch(
-          `https://graph.facebook.com/v25.0/${m.id}/comments?fields=id,text&limit=100&access_token=${token}`
+        const commentsTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('comments timeout')), 2000)
         );
+        const commentsRes = await Promise.race([
+          fetch(`https://graph.facebook.com/v25.0/${m.id}/comments?fields=id,text&limit=100&access_token=${token}`),
+          commentsTimeout
+        ]);
         const commentsData = await commentsRes.json();
         comments = commentsData.data || [];
         // fix: 優先用 API 回傳的 summary.total_count，fallback 用 data 長度
