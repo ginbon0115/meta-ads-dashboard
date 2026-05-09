@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小赫廣告指揮中心</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+:root {
+  --bg: #FFF8F0;
+  --surface: #FFFFFF;
+  --surface-2: #FEF3E2;
+  --border: #F0D9B5;
+  --text: #1A1A2E;
+  --text-2: #6B5B45;
+  --accent: #F97316;
+  --accent-hover: #EA6C0A;
+  --accent-light: #FFF0E0;
+  --success: #22C55E;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --purple: #8B5CF6;
+  --blue: #3B82F6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* HEADER */
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(249,115,22,0.06); }
+.logo-area { display: flex; align-items: center; }
+.logo-accent { background: linear-gradient(135deg, #F97316, #FBBF24); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; }
+.logo-accent i { color: white; font-size: 22px; }
+.logo-title { font-weight: 700; font-size: 17px; color: var(--text); letter-spacing: -0.3px; }
+.logo-sub { font-size: 11px; color: var(--text-2); margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.live-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse 2s infinite; }
+.live-dot.active { background: var(--success); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.refresh-btn { display: flex; align-items: center; gap: 6px; background: var(--accent-light); border: 1px solid var(--border); color: var(--accent); border-radius: 10px; padding: 7px 14px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; transition: all 0.2s; }
+.refresh-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.refresh-btn.spinning i { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* NAV TABS */
+.nav-tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 4px; }
+.nav-tab { display: flex; align-items: center; gap: 7px; padding: 12px 18px; font-size: 13px; font-weight: 600; color: var(--text-2); border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; transition: all 0.2s; font-family: inherit; border-radius: 8px 8px 0 0; white-space: nowrap; }
+.nav-tab i { font-size: 16px; }
+.nav-tab:hover { color: var(--accent); background: var(--accent-light); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-light); }
+
+/* MAIN */
+main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* SUMMARY KPI GRID */
+.summary-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
+@media (max-width: 900px) { .summary-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .summary-kpi-grid { grid-template-columns: 1fr 1fr; } }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; border-left: 4px solid var(--accent); transition: box-shadow 0.2s; }
+.kpi-card:hover { box-shadow: 0 4px 16px rgba(249,115,22,0.1); }
+.kpi-card.kpi-blue { border-left-color: var(--blue); }
+.kpi-card.kpi-purple { border-left-color: var(--purple); }
+.kpi-card.kpi-green { border-left-color: var(--success); }
+.kpi-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+.kpi-icon i { color: var(--accent); font-size: 17px; }
+.kpi-icon.blue { background: rgba(59,130,246,0.1); }
+.kpi-icon.blue i { color: var(--blue); }
+.kpi-icon.purple { background: rgba(139,92,246,0.1); }
+.kpi-icon.purple i { color: var(--purple); }
+.kpi-icon.green { background: rgba(34,197,94,0.1); }
+.kpi-icon.green i { color: var(--success); }
+.kpi-label { font-size: 11px; color: var(--text-2); margin-bottom: 5px; font-weight: 500; }
+.kpi-value { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1; }
+.kpi-sub { font-size: 11px; color: var(--text-2); margin-top: 4px; }
+
+/* SECTION LAYOUT */
+.ad-section { margin-bottom: 32px; }
+.ad-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.ad-section-title { display: flex; align-items: center; gap: 10px; }
+.ad-section-icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.icon-msg { background: rgba(249,115,22,0.12); color: var(--accent); }
+.icon-conv { background: rgba(139,92,246,0.12); color: var(--purple); }
+.icon-reach { background: rgba(59,130,246,0.12); color: var(--blue); }
+.ad-section-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.ad-section-desc { font-size: 11px; color: var(--text-2); margin-top: 1px; }
+.ad-count-badge { font-size: 11px; font-weight: 600; background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 12px; color: var(--text-2); }
+
+/* SECTION MINI KPIS */
+.section-kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.section-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.section-kpi-label { font-size: 10px; color: var(--text-2); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+.section-kpi-val { font-size: 18px; font-weight: 700; color: var(--text); }
+.section-kpi-sub { font-size: 10px; color: var(--text-2); margin-top: 2px; }
+
+/* TABLE */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.table-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: var(--surface-2); }
+.table-title { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+.table-title i { color: var(--accent); }
+.last-update { font-size: 12px; color: var(--text-2); }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th { background: var(--surface-2); padding: 9px 14px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); white-space: nowrap; border-bottom: 1px solid var(--border); }
+tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #FFF5EC; }
+tbody tr.selected { background: var(--accent-light); }
+td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
+.campaign-name { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.status-active { background: rgba(34,197,94,0.12); color: #16A34A; }
+.status-paused { background: rgba(245,158,11,0.12); color: #D97706; }
+.status-other { background: rgba(107,91,69,0.1); color: var(--text-2); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.num { font-variant-numeric: tabular-nums; }
+.num-muted { color: var(--text-2); }
+.cost-good { color: var(--success); font-weight: 700; }
+.cost-warn { color: var(--warning); font-weight: 700; }
+.cost-bad { color: var(--danger); font-weight: 700; }
+
+/* SKELETON */
+.skeleton { background: linear-gradient(90deg, #FEF3E2 25%, #F0D9B5 50%, #FEF3E2 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; height: 28px; width: 70%; display: block; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.empty-state { padding: 48px 20px; text-align: center; color: var(--text-2); }
+.empty-state i { font-size: 36px; margin-bottom: 10px; display: block; color: var(--border); }
+
+/* SIDE PANEL */
+.side-panel { position: fixed; top: 120px; right: -440px; width: 440px; height: calc(100vh - 120px); background: var(--surface); border-left: 1px solid var(--border); z-index: 200; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow: hidden; box-shadow: -4px 0 24px rgba(249,115,22,0.08); }
+.side-panel.open { right: 0; }
+@media (max-width: 500px) { .side-panel { width: 100%; right: -100%; top: 60px; height: calc(100vh - 60px); } }
+.panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; background: var(--surface-2); }
+.panel-name { font-weight: 700; font-size: 14px; line-height: 1.4; word-break: break-all; }
+.panel-type-tag { font-size: 11px; font-weight: 600; margin-top: 4px; }
+.panel-close { background: none; border: none; color: var(--text-2); cursor: pointer; font-size: 20px; padding: 2px; flex-shrink: 0; display: flex; align-items: center; border-radius: 8px; transition: all 0.15s; }
+.panel-close:hover { background: var(--border); color: var(--text); }
+.panel-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+.stat-item { background: var(--surface); padding: 12px 16px; }
+.stat-label { font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+.stat-val { font-weight: 700; font-size: 16px; }
+.panel-actions { padding: 14px 20px; display: flex; gap: 10px; border-bottom: 1px solid var(--border); }
+.btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--accent-light); color: var(--accent); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.panel-content { flex: 1; overflow-y: auto; padding: 20px; }
+.panel-content::-webkit-scrollbar { width: 4px; }
+.panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.ai-output { font-size: 13px; line-height: 1.8; color: var(--text); word-break: break-word; }
+.ai-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-2); text-align: center; }
+.ai-placeholder i { font-size: 40px; color: var(--accent); opacity: 0.4; }
+.loading-dots { display: inline-flex; gap: 4px; }
+.loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite; }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+/* OVERLAY */
+.overlay { position: fixed; inset: 0; background: rgba(26,26,46,0.25); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.overlay.show { opacity: 1; pointer-events: all; }
+
+/* TOAST */
+#toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; pointer-events: all; animation: slideUp 0.3s ease; max-width: 320px; box-shadow: 0 8px 24px rgba(26,26,46,0.12); }
+.toast i { font-size: 16px; flex-shrink: 0; }
+.toast.success { border-color: rgba(34,197,94,0.4); }
+.toast.success i { color: var(--success); }
+.toast.error { border-color: rgba(239,68,68,0.4); }
+.toast.error i { color: var(--danger); }
+.toast.info i { color: var(--accent); }
+.toast.fadeout { animation: fadeOut 0.3s ease forwards; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(10px); } }
+
+/* COUNTDOWN */
+.countdown-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 3px; background: var(--border); z-index: 100; }
+.countdown-fill { height: 100%; background: linear-gradient(90deg, #F97316, #FBBF24); transition: width 1s linear; }
+
+/* AI ROOM */
+.ai-room { display: flex; flex-direction: column; gap: 24px; }
+.kpi-setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.kpi-setup-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.kpi-setup-title i { color: var(--accent); font-size: 16px; }
+.kpi-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+@media (max-width: 700px) { .kpi-inputs { grid-template-columns: 1fr; } }
+.kpi-field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.kpi-field input { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; font-family: inherit; color: var(--text); transition: border-color 0.2s; outline: none; }
+.kpi-field input:focus { border-color: var(--accent); }
+.save-kpi-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: white; border: none; border-radius: 10px; padding: 9px 20px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.save-kpi-btn:hover { background: var(--accent-hover); }
+.suggestions-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.suggestions-header { padding: 16px 20px; background: var(--surface-2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.suggestions-title { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.suggestions-title i { color: var(--accent); }
+.run-ai-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: white; border: none; border-radius: 10px; padding: 9px 20px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.run-ai-btn:hover { background: var(--accent-hover); }
+.run-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.suggestion-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.suggestion-item { background: var(--bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; }
+.suggestion-item.priority-high { border-left-color: var(--danger); border-left-width: 4px; }
+.suggestion-item.priority-medium { border-left-color: var(--warning); border-left-width: 4px; }
+.suggestion-item.priority-low { border-left-color: var(--success); border-left-width: 4px; }
+.suggestion-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+.icon-restart { background: rgba(34,197,94,0.12); color: var(--success); }
+.icon-pause { background: rgba(239,68,68,0.12); color: var(--danger); }
+.icon-adjust { background: rgba(245,158,11,0.12); color: var(--warning); }
+.icon-keep { background: rgba(249,115,22,0.1); color: var(--accent); }
+.suggestion-body { flex: 1; min-width: 0; }
+.suggestion-action-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+.suggestion-name { font-weight: 700; font-size: 14px; margin-bottom: 5px; word-break: break-all; }
+.suggestion-reason { font-size: 12px; color: var(--text-2); line-height: 1.6; margin-bottom: 8px; }
+.suggestion-expected { font-size: 11px; color: var(--accent); font-weight: 600; }
+.suggestion-btns { display: flex; gap: 6px; margin-top: 10px; }
+.approve-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--success); color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.approve-btn:hover { opacity: 0.85; }
+.approve-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.reject-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--surface-2); color: var(--danger); border: 1.5px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.reject-btn:hover { background: rgba(239,68,68,0.1); }
+.budget-range-box { background: var(--accent-light); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 16px; margin: 10px 0; }
+.budget-range-label { font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+.budget-range-display { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.range-sep { margin: 0 6px; color: var(--text-2); font-weight: 400; }
+.budget-input-row { display: flex; align-items: center; gap: 8px; }
+.budget-input-prefix, .budget-input-suffix { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+.budget-input { width: 100px; padding: 6px 10px; border: 1.5px solid var(--accent); border-radius: 8px; font-size: 16px; font-weight: 600; color: var(--text); background: white; text-align: center; }
+.budget-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.action-log-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.action-log-header { padding: 14px 20px; background: var(--surface-2); border-bottom: 1px solid var(--border); font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.action-log-header i { color: var(--accent); }
+.action-log-list { max-height: 220px; overflow-y: auto; }
+.log-item { padding: 10px 20px; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; gap: 12px; align-items: flex-start; }
+.log-item:last-child { border-bottom: none; }
+.log-time { color: var(--text-2); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.log-empty { padding: 24px 20px; text-align: center; color: var(--text-2); font-size: 12px; }
+.ai-suggestions-empty { padding: 48px 20px; text-align: center; color: var(--text-2); }
+.ai-suggestions-empty i { font-size: 40px; color: var(--border); display: block; margin-bottom: 12px; }
+
+/* REELS */
+.reel-recommend-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; gap: 16px; align-items: flex-start; }
+.reel-score-badge { min-width: 52px; height: 52px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+.score-high { background: #dcfce7; color: #16a34a; }
+.score-mid { background: #fef9c3; color: #ca8a04; }
+.score-low { background: #f1f5f9; color: #94a3b8; }
+.reel-meta { font-size: 12px; color: var(--text-2); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+.reel-recommend-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 8px; }
+.badge-messaging { background: #fff0e0; color: var(--accent); }
+.badge-reach { background: #e0f2fe; color: #0369a1; }
+.badge-skip { background: #f1f5f9; color: #94a3b8; }
+.reels-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.reels-section-header { padding: 16px 20px; background: var(--surface-2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.reels-section-title { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.reels-section-title i { color: var(--accent); }
+.reels-section-body { padding: 16px; }
+
+/* MOBILE */
+@media (max-width: 600px) {
+  main { padding: 16px 16px 80px; }
+  header { padding: 0 16px; }
+  .nav-tabs { padding: 0 12px; overflow-x: auto; }
+  .nav-tab { padding: 12px 12px; font-size: 12px; }
+  .section-kpi-row { grid-template-columns: 1fr 1fr; }
+  .kpi-inputs { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="logo-accent"><i class="ph ph-broadcast"></i></div>
+    <div>
+      <div class="logo-title">小赫廣告指揮中心</div>
+      <div class="logo-sub">Meta Ads Dashboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveText">載入中</span>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData(true)">
+      <i class="ph ph-arrows-clockwise" id="refreshIcon"></i>
+      <span>重新整理</span>
+    </button>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" id="tab-overview" onclick="switchTab('overview')">
+    <i class="ph ph-chart-bar"></i> 廣告成效
+  </button>
+  <button class="nav-tab" id="tab-reels" onclick="switchTab('reels')">
+    <i class="ph ph-video"></i> Reels 推薦
+  </button>
+  <button class="nav-tab" id="tab-ai" onclick="switchTab('ai')">
+    <i class="ph ph-robot"></i> AI 投廣室
+  </button>
+</nav>
+
+<main>
+
+<!-- TAB 1: 廣告成效 -->
+<div class="tab-content active" id="content-overview">
+
+  <p class="section-title" style="margin-bottom:14px;">本月總覽（過去 30 天）</p>
+  <div class="summary-kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="ph ph-currency-circle-dollar"></i></div>
+      <div class="kpi-label">總花費</div>
+      <div class="kpi-value skeleton" id="kpiSpend"></div>
+    </div>
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-icon blue"><i class="ph ph-chat-circle-dots"></i></div>
+      <div class="kpi-label">私訊廣告成本</div>
+      <div class="kpi-value skeleton" id="kpiCPM"></div>
+    </div>
+    <div class="kpi-card kpi-purple">
+      <div class="kpi-icon purple"><i class="ph ph-trend-up"></i></div>
+      <div class="kpi-label">最高 ROAS</div>
+      <div class="kpi-value skeleton" id="kpiROAS"></div>
+    </div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-icon green"><i class="ph ph-play-circle"></i></div>
+      <div class="kpi-label">執行中活動</div>
+      <div class="kpi-value skeleton" id="kpiActive"></div>
+    </div>
+  </div>
+
+  <div id="campaignSections">
+    <div class="empty-state">
+      <i class="ph ph-circle-notch" style="animation:spin 1s linear infinite;"></i>
+      載入廣告資料中…
+    </div>
+  </div>
+
+  <div class="last-update" id="lastUpdate" style="margin-top:12px;text-align:right;">—</div>
+</div>
+
+<!-- TAB 2: Reels 推薦 -->
+<div class="tab-content" id="content-reels">
+
+  <div class="reels-section">
+    <div class="reels-section-header">
+      <div class="reels-section-title">
+        <i class="ph ph-star"></i>
+        哪支 Reels 值得投廣？
+      </div>
+      <button class="refresh-btn" onclick="loadOrganicReels()" id="organicRefreshBtn">
+        <i class="ph ph-arrows-clockwise"></i> 載入有機成效
+      </button>
+    </div>
+    <div class="reels-section-body">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:16px;">根據留言購買意圖、儲存率、觀看時間，AI 幫你找出最有機會變現的 Reels</p>
+      <div id="organicReelsList">
+        <div class="empty-state"><i class="ph ph-film-strip"></i><p>點「載入有機成效」抓你的 Reels 數據</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TAB 3: AI 投廣室 -->
+<div class="tab-content" id="content-ai">
+  <div class="ai-room">
+
+    <div class="kpi-setup-card">
+      <div class="kpi-setup-title"><i class="ph ph-sliders-horizontal"></i> KPI 目標設定</div>
+      <div class="kpi-inputs">
+        <div class="kpi-field">
+          <label>目標每私訊成本 (NT$)</label>
+          <input type="number" id="kpiTargetCost" placeholder="例：12" value="">
+        </div>
+        <div class="kpi-field">
+          <label>單活動日預算上限 (NT$)</label>
+          <input type="number" id="kpiMaxBudget" placeholder="例：300" value="">
+        </div>
+        <div class="kpi-field">
+          <label>停投門檻（每私訊超過 NT$）</label>
+          <input type="number" id="kpiStopThreshold" placeholder="例：20" value="">
+        </div>
+      </div>
+      <button class="save-kpi-btn" onclick="saveKPI()"><i class="ph ph-floppy-disk"></i> 儲存目標</button>
+    </div>
+
+    <div class="suggestions-card">
+      <div class="suggestions-header">
+        <div class="suggestions-title"><i class="ph ph-robot"></i> AI 本次建議</div>
+        <button class="run-ai-btn" id="runAIBtn" onclick="runAIManager()"><i class="ph ph-sparkle"></i> 讓 AI 分析</button>
+      </div>
+      <div id="suggestionsList">
+        <div class="ai-suggestions-empty">
+          <i class="ph ph-lightning"></i>
+          <p>點擊「讓 AI 分析」，根據目前廣告資料產生建議行動</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-log-card">
+      <div class="action-log-header"><i class="ph ph-clock-clockwise"></i> 執行紀錄</div>
+      <div class="action-log-list" id="actionLogList"><div class="log-empty">還沒有執行紀錄</div></div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<div class="side-panel" id="sidePanel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-name" id="panelName">—</div>
+      <div class="panel-type-tag" id="panelTypeTag"></div>
+    </div>
+    <button class="panel-close" onclick="closePanel()"><i class="ph ph-x"></i></button>
+  </div>
+  <div class="panel-stats" id="panelStats"></div>
+  <div class="panel-actions">
+    <button class="btn btn-primary" id="btnAnalyze" onclick="runAnalysis()"><i class="ph ph-sparkle"></i> AI 分析</button>
+    <button class="btn btn-secondary" id="btnImprove" onclick="runImprove()"><i class="ph ph-lightbulb"></i> 改善建議</button>
+  </div>
+  <div class="panel-content" id="panelContent">
+    <div class="ai-placeholder"><i class="ph ph-robot"></i><p>點擊上方按鈕，讓 AI 分析這個活動</p></div>
+  </div>
+</div>
+
+<div class="countdown-bar"><div class="countdown-fill" id="countdownFill" style="width:100%"></div></div>
+<div id="toast-container"></div>
+
+<script>
+let campaigns = [];
+let selectedCampaign = null;
+let countdownTimer = null;
+const REFRESH_INTERVAL = 60;
+
+function toast(msg, type = 'info', duration = 3000) {
+  const icons = { success: 'ph-check-circle', error: 'ph-x-circle', info: 'ph-info' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<i class="ph ${icons[type] || 'ph-info'}"></i><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.classList.add('fadeout'); setTimeout(() => el.remove(), 300); }, duration);
+}
+
+function fmtNTD(v) { if (v === null || v === undefined) return '—'; return 'NT$' + Math.round(v).toLocaleString(); }
+function fmtNum(n) { if (!n && n !== 0) return '—'; return parseInt(n).toLocaleString(); }
+function fmtROAS(r) { if (!r) return '—'; return r.toFixed(2) + 'x'; }
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function msgCostClass(v) {
+  if (v === null || v === undefined) return '';
+  if (v < 8) return 'cost-good';
+  if (v < 15) return 'cost-warn';
+  return 'cost-bad';
+}
+function roasClass(r) {
+  if (!r) return '';
+  if (r >= 3) return 'cost-good';
+  if (r >= 2) return 'cost-warn';
+  return 'cost-bad';
+}
+function cpmClass(v) {
+  if (!v) return '';
+  if (v < 50) return 'cost-good';
+  if (v < 120) return 'cost-warn';
+  return 'cost-bad';
+}
+
+function getAdType(objective) {
+  const messaging = ['MESSAGES', 'OUTCOME_ENGAGEMENT'];
+  const conversion = ['OUTCOME_SALES', 'CONVERSIONS', 'PRODUCT_CATALOG_SALES'];
+  const reach = ['REACH', 'BRAND_AWARENESS', 'OUTCOME_AWARENESS', 'OUTCOME_TRAFFIC', 'LINK_CLICKS', 'VIDEO_VIEWS'];
+  if (messaging.includes(objective)) return 'messaging';
+  if (conversion.includes(objective)) return 'conversion';
+  if (reach.includes(objective)) return 'reach';
+  return 'other';
+}
+
+function statusBadge(s) {
+  if (s === 'ACTIVE') return `<span class="status-badge status-active"><span class="status-dot"></span>執行中</span>`;
+  if (s === 'PAUSED') return `<span class="status-badge status-paused"><span class="status-dot"></span>暫停</span>`;
+  return `<span class="status-badge status-other"><span class="status-dot"></span>${s}</span>`;
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  document.getElementById('content-' + tabName).classList.add('active');
+  closePanel();
+}
+
+function updateSummaryKPIs(data) {
+  const totalSpend = data.reduce((s, c) => s + (c.spend || 0), 0);
+  const msgCampaigns = data.filter(c => getAdType(c.objective) === 'messaging' && c.messages > 0);
+  const totalMsg = msgCampaigns.reduce((s, c) => s + c.messages, 0);
+  const totalMsgSpend = msgCampaigns.reduce((s, c) => s + c.spend, 0);
+  const avgCostPerMsg = totalMsg > 0 ? totalMsgSpend / totalMsg : null;
+  const bestROAS = data.filter(c => c.roas).reduce((max, c) => c.roas > max ? c.roas : max, 0) || null;
+  const activeCount = data.filter(c => c.status === 'ACTIVE').length;
+
+  const set = (id, val, sub, removeSkeleton = true) => {
+    const el = document.getElementById(id);
+    if (removeSkeleton) el.classList.remove('skeleton');
+    el.style.height = '';
+    el.textContent = val;
+    const old = el.parentElement.querySelector('.kpi-sub');
+    if (old) old.remove();
+    if (sub) {
+      const s = document.createElement('div');
+      s.className = 'kpi-sub';
+      s.textContent = sub;
+      el.after(s);
+    }
+  };
+
+  set('kpiSpend', fmtNTD(totalSpend), '過去 30 天');
+  set('kpiCPM', avgCostPerMsg !== null ? fmtNTD(avgCostPerMsg) : '—', avgCostPerMsg !== null ? '每私訊平均成本' : '暫無私訊廣告數據');
+  set('kpiROAS', bestROAS ? fmtROAS(bestROAS) : '—', bestROAS ? '最高單活動 ROAS' : '暫無轉換廣告數據');
+  set('kpiActive', activeCount.toString(), '個活動執行中');
+}
+
+function renderCampaignSections(data) {
+  const messaging = data.filter(c => getAdType(c.objective) === 'messaging');
+  const conversion = data.filter(c => getAdType(c.objective) === 'conversion');
+  const reach = data.filter(c => getAdType(c.objective) === 'reach');
+  const other = data.filter(c => getAdType(c.objective) === 'other');
+
+  let html = '';
+
+  if (messaging.length > 0) {
+    const spend = messaging.reduce((s, c) => s + c.spend, 0);
+    const msgs = messaging.reduce((s, c) => s + c.messages, 0);
+    const cpm = msgs > 0 ? spend / msgs : null;
+    html += `
+    <div class="ad-section">
+      <div class="ad-section-header">
+        <div class="ad-section-title">
+          <div class="ad-section-icon icon-msg"><i class="ph ph-chat-circle-dots"></i></div>
+          <div>
+            <div class="ad-section-name">私訊廣告</div>
+            <div class="ad-section-desc">目標：讓人私訊詢問 → 加 LINE 群 → 團購</div>
+          </div>
+        </div>
+        <span class="ad-count-badge">${messaging.length} 個活動</span>
+      </div>
+      <div class="section-kpi-row">
+        <div class="section-kpi">
+          <div class="section-kpi-label">花費</div>
+          <div class="section-kpi-val">${fmtNTD(spend)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">私訊數</div>
+          <div class="section-kpi-val">${fmtNum(msgs)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">每私訊成本</div>
+          <div class="section-kpi-val ${msgCostClass(cpm)}">${fmtNTD(cpm)}</div>
+          <div class="section-kpi-sub">${cpm ? (cpm < 8 ? '優秀' : cpm < 15 ? '良好' : '需優化') : '—'}</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>活動名稱</th><th>狀態</th><th>花費</th><th>私訊數</th><th>每私訊成本</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${messaging.map(c => {
+                const cpp = c.cost_per_message;
+                const cppStr = cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>';
+                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
+                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
+                  <td>${statusBadge(c.status)}</td>
+                  <td class="num">${fmtNTD(c.spend)}</td>
+                  <td class="num">${fmtNum(c.messages)}</td>
+                  <td class="num">${cppStr}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (conversion.length > 0) {
+    const spend = conversion.reduce((s, c) => s + c.spend, 0);
+    const revenue = conversion.reduce((s, c) => s + (c.revenue || 0), 0);
+    const purchases = conversion.reduce((s, c) => s + (c.purchases || 0), 0);
+    const roas = spend > 0 && revenue > 0 ? revenue / spend : null;
+    html += `
+    <div class="ad-section">
+      <div class="ad-section-header">
+        <div class="ad-section-title">
+          <div class="ad-section-icon icon-conv"><i class="ph ph-shopping-cart"></i></div>
+          <div>
+            <div class="ad-section-name">轉換廣告</div>
+            <div class="ad-section-desc">目標：直接購買 → Pixel 追蹤真實 ROAS</div>
+          </div>
+        </div>
+        <span class="ad-count-badge">${conversion.length} 個活動</span>
+      </div>
+      <div class="section-kpi-row">
+        <div class="section-kpi">
+          <div class="section-kpi-label">花費</div>
+          <div class="section-kpi-val">${fmtNTD(spend)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">購買次數</div>
+          <div class="section-kpi-val">${fmtNum(purchases)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">追蹤營收</div>
+          <div class="section-kpi-val">${fmtNTD(revenue)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">整體 ROAS</div>
+          <div class="section-kpi-val ${roasClass(roas)}">${fmtROAS(roas)}</div>
+          <div class="section-kpi-sub">${roas ? (roas >= 3 ? '優秀' : roas >= 2 ? '良好' : '需優化') : '尚無 Pixel 數據'}</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>活動名稱</th><th>狀態</th><th>花費</th><th>購買次數</th><th>追蹤營收</th><th>ROAS</th><th>每購成本</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${conversion.map(c => {
+                const roasStr = c.roas !== null ? `<span class="${roasClass(c.roas)}">${fmtROAS(c.roas)}</span>` : '<span class="num-muted">—</span>';
+                const cppStr = c.cost_per_purchase !== null ? fmtNTD(c.cost_per_purchase) : '<span class="num-muted">—</span>';
+                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
+                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
+                  <td>${statusBadge(c.status)}</td>
+                  <td class="num">${fmtNTD(c.spend)}</td>
+                  <td class="num">${fmtNum(c.purchases)}</td>
+                  <td class="num">${fmtNTD(c.revenue)}</td>
+                  <td class="num">${roasStr}</td>
+                  <td class="num">${cppStr}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ${roas === null && conversion.some(c => c.spend > 0) ? `
+      <div style="margin-top:12px;padding:12px 16px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:10px;font-size:12px;color:#8B5CF6;display:flex;align-items:flex-start;gap:8px;">
+        <i class="ph ph-info" style="margin-top:1px;flex-shrink:0;"></i>
+        <span>ROAS 顯示「—」代表 Meta Pixel 尚未回傳購買事件。請確認購買頁面有安裝 Pixel，且廣告目標設為「購買」轉換。</span>
+      </div>` : ''}
+    </div>`;
+  }
+
+  if (reach.length > 0) {
+    const spend = reach.reduce((s, c) => s + c.spend, 0);
+    const totalReach = reach.reduce((s, c) => s + c.reach, 0);
+    const totalImpr = reach.reduce((s, c) => s + c.impressions, 0);
+    const avgCPM = totalImpr > 0 ? spend / totalImpr * 1000 : null;
+    html += `
+    <div class="ad-section">
+      <div class="ad-section-header">
+        <div class="ad-section-title">
+          <div class="ad-section-icon icon-reach"><i class="ph ph-megaphone"></i></div>
+          <div>
+            <div class="ad-section-name">觸及廣告</div>
+            <div class="ad-section-desc">目標：擴大品牌曝光 → 累積潛在受眾</div>
+          </div>
+        </div>
+        <span class="ad-count-badge">${reach.length} 個活動</span>
+      </div>
+      <div class="section-kpi-row">
+        <div class="section-kpi">
+          <div class="section-kpi-label">花費</div>
+          <div class="section-kpi-val">${fmtNTD(spend)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">觸及人數</div>
+          <div class="section-kpi-val">${fmtNum(totalReach)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">曝光次數</div>
+          <div class="section-kpi-val">${fmtNum(totalImpr)}</div>
+        </div>
+        <div class="section-kpi">
+          <div class="section-kpi-label">CPM</div>
+          <div class="section-kpi-val ${cpmClass(avgCPM)}">${fmtNTD(avgCPM)}</div>
+          <div class="section-kpi-sub">每千次曝光成本</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>活動名稱</th><th>狀態</th><th>花費</th><th>觸及人數</th><th>曝光次數</th><th>CPM</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reach.map(c => {
+                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
+                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
+                  <td>${statusBadge(c.status)}</td>
+                  <td class="num">${fmtNTD(c.spend)}</td>
+                  <td class="num">${fmtNum(c.reach)}</td>
+                  <td class="num">${fmtNum(c.impressions)}</td>
+                  <td class="num ${cpmClass(c.cpm)}">${fmtNTD(c.cpm)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (other.length > 0 && (messaging.length === 0 && conversion.length === 0 && reach.length === 0)) {
+    html += `
+    <div class="ad-section">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title"><i class="ph ph-list-bullets"></i> 所有廣告活動</div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>活動名稱</th><th>狀態</th><th>目標</th><th>花費</th><th>觸及</th><th>私訊數</th><th>每私訊成本</th></tr></thead>
+            <tbody>
+              ${other.map(c => {
+                const cpp = c.cost_per_message;
+                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
+                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
+                  <td>${statusBadge(c.status)}</td>
+                  <td class="num-muted">${c.objective || '—'}</td>
+                  <td class="num">${fmtNTD(c.spend)}</td>
+                  <td class="num">${fmtNum(c.reach)}</td>
+                  <td class="num">${fmtNum(c.messages)}</td>
+                  <td class="num">${cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  } else if (other.length > 0) {
+    html += `
+    <div class="ad-section">
+      <div class="ad-section-header">
+        <div class="ad-section-title">
+          <div class="ad-section-icon" style="background:var(--surface-2);color:var(--text-2);"><i class="ph ph-list-bullets"></i></div>
+          <div>
+            <div class="ad-section-name">其他廣告</div>
+            <div class="ad-section-desc">目標類型未分類</div>
+          </div>
+        </div>
+        <span class="ad-count-badge">${other.length} 個活動</span>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>活動名稱</th><th>狀態</th><th>目標</th><th>花費</th><th>觸及</th></tr></thead>
+            <tbody>
+              ${other.map(c => `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
+                <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
+                <td>${statusBadge(c.status)}</td>
+                <td class="num-muted">${c.objective || '—'}</td>
+                <td class="num">${fmtNTD(c.spend)}</td>
+                <td class="num">${fmtNum(c.reach)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (!html) {
+    html = `<div class="empty-state"><i class="ph ph-magnifying-glass"></i>目前沒有廣告活動資料</div>`;
+  }
+
+  document.getElementById('campaignSections').innerHTML = html;
+}
+
+async function loadData(manual = false) {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning'); btn.disabled = true;
+  try {
+    const res = await fetch('/api/campaigns');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    campaigns = json.data || [];
+    updateSummaryKPIs(campaigns);
+    renderCampaignSections(campaigns);
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent = '上次更新：' + now.toLocaleTimeString('zh-TW');
+    document.getElementById('liveDot').classList.add('active');
+    document.getElementById('liveText').textContent = '即時監控';
+    if (manual) toast('資料已更新', 'success');
+  } catch (err) {
+    toast('載入失敗：' + err.message, 'error');
+    document.getElementById('liveDot').classList.remove('active');
+    document.getElementById('liveText').textContent = '連線異常';
+    document.getElementById('campaignSections').innerHTML = `<div class="empty-state"><i class="ph ph-warning"></i>載入失敗：${escapeHtml(err.message)}</div>`;
+  } finally {
+    btn.classList.remove('spinning'); btn.disabled = false;
+  }
+}
+
+function startCountdown() {
+  let remaining = REFRESH_INTERVAL;
+  const fill = document.getElementById('countdownFill');
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    remaining--;
+    fill.style.width = (remaining / REFRESH_INTERVAL * 100) + '%';
+    if (remaining <= 0) { remaining = REFRESH_INTERVAL; loadData(); }
+  }, 1000);
+}
+
+function selectCampaign(id) {
+  const c = campaigns.find(x => x.id === id);
+  if (!c) return;
+  selectedCampaign = c;
+  document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
+  document.querySelector(`tr[data-id="${id}"]`)?.classList.add('selected');
+  document.getElementById('panelName').textContent = c.name;
+
+  const adType = getAdType(c.objective);
+  const typeLabels = { messaging: '私訊廣告', conversion: '轉換廣告', reach: '觸及廣告', other: '廣告活動' };
+  const typeColors = { messaging: 'var(--accent)', conversion: 'var(--purple)', reach: 'var(--blue)', other: 'var(--text-2)' };
+  document.getElementById('panelTypeTag').innerHTML = `<span style="color:${typeColors[adType]};font-weight:600;">${typeLabels[adType]}</span>`;
+
+  let statsHtml = '';
+  if (adType === 'messaging') {
+    statsHtml = `
+      <div class="stat-item"><div class="stat-label">花費</div><div class="stat-val">${fmtNTD(c.spend)}</div></div>
+      <div class="stat-item"><div class="stat-label">私訊數</div><div class="stat-val">${fmtNum(c.messages)}</div></div>
+      <div class="stat-item"><div class="stat-label">觸及人數</div><div class="stat-val">${fmtNum(c.reach)}</div></div>
+      <div class="stat-item"><div class="stat-label">每私訊成本</div><div class="stat-val ${msgCostClass(c.cost_per_message)}">${c.cost_per_message !== null ? fmtNTD(c.cost_per_message) : '—'}</div></div>`;
+  } else if (adType === 'conversion') {
+    statsHtml = `
+      <div class="stat-item"><div class="stat-label">花費</div><div class="stat-val">${fmtNTD(c.spend)}</div></div>
+      <div class="stat-item"><div class="stat-label">ROAS</div><div class="stat-val ${roasClass(c.roas)}">${fmtROAS(c.roas)}</div></div>
+      <div class="stat-item"><div class="stat-label">追蹤營收</div><div class="stat-val">${fmtNTD(c.revenue)}</div></div>
+      <div class="stat-item"><div class="stat-label">購買次數</div><div class="stat-val">${fmtNum(c.purchases)}</div></div>`;
+  } else {
+    statsHtml = `
+      <div class="stat-item"><div class="stat-label">花費</div><div class="stat-val">${fmtNTD(c.spend)}</div></div>
+      <div class="stat-item"><div class="stat-label">觸及人數</div><div class="stat-val">${fmtNum(c.reach)}</div></div>
+      <div class="stat-item"><div class="stat-label">曝光次數</div><div class="stat-val">${fmtNum(c.impressions)}</div></div>
+      <div class="stat-item"><div class="stat-label">CPM</div><div class="stat-val ${cpmClass(c.cpm)}">${fmtNTD(c.cpm)}</div></div>`;
+  }
+  document.getElementById('panelStats').innerHTML = statsHtml;
+  document.getElementById('panelContent').innerHTML = `<div class="ai-placeholder"><i class="ph ph-robot"></i><p>點擊上方按鈕，讓 AI 分析這個活動</p></div>`;
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closePanel() {
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
+  selectedCampaign = null;
+}
+
+function renderMarkdown(text) {
+  return text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+async function streamAI(endpoint, payload, contentEl) {
+  const btns = document.querySelectorAll('.panel-actions .btn');
+  btns.forEach(b => b.disabled = true);
+  contentEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--text-2);margin-bottom:16px;"><div class="loading-dots"><span></span><span></span><span></span></div>AI 分析中…</div><div class="ai-output" id="aiText"></div>`;
+  try {
+    const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    contentEl.innerHTML = '<div class="ai-output" id="aiText"></div>';
+    const output = contentEl.querySelector('#aiText');
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') { toast('AI 分析完成', 'success'); break; }
+          try { const p = JSON.parse(data); if (p.text) { buffer += p.text; output.innerHTML = renderMarkdown(buffer); } } catch {}
+        }
+      }
+    }
+  } catch (err) {
+    contentEl.innerHTML = `<div style="color:var(--danger);display:flex;gap:8px;align-items:center;"><i class="ph ph-warning"></i>錯誤：${err.message}</div>`;
+    toast('AI 分析失敗', 'error');
+  } finally { btns.forEach(b => b.disabled = false); }
+}
+
+function runAnalysis() {
+  if (!selectedCampaign) return;
+  streamAI('/api/analyze', {
+    campaign_id: selectedCampaign.id, campaign_name: selectedCampaign.name,
+    spend: selectedCampaign.spend, reach: selectedCampaign.reach,
+    messages: selectedCampaign.messages, cost_per_message: selectedCampaign.cost_per_message,
+    impressions: selectedCampaign.impressions, roas: selectedCampaign.roas,
+    purchases: selectedCampaign.purchases, revenue: selectedCampaign.revenue,
+    objective: selectedCampaign.objective,
+  }, document.getElementById('panelContent'));
+}
+
+function runImprove() {
+  if (!selectedCampaign) return;
+  streamAI('/api/improve', {
+    campaign_id: selectedCampaign.id, campaign_name: selectedCampaign.name,
+    spend: selectedCampaign.spend, reach: selectedCampaign.reach,
+    messages: selectedCampaign.messages, cost_per_message: selectedCampaign.cost_per_message,
+    impressions: selectedCampaign.impressions, objective: selectedCampaign.objective,
+    roas: selectedCampaign.roas, purchases: selectedCampaign.purchases, revenue: selectedCampaign.revenue,
+  }, document.getElementById('panelContent'));
+}
+
+function loadKPISettings() {
+  const kpi = JSON.parse(localStorage.getItem('kpi_settings') || '{}');
+  if (kpi.target_cost_per_msg) document.getElementById('kpiTargetCost').value = kpi.target_cost_per_msg;
+  if (kpi.max_daily_budget) document.getElementById('kpiMaxBudget').value = kpi.max_daily_budget;
+  if (kpi.stop_threshold) document.getElementById('kpiStopThreshold').value = kpi.stop_threshold;
+}
+function saveKPI() {
+  const kpi = {
+    target_cost_per_msg: parseFloat(document.getElementById('kpiTargetCost').value) || 12,
+    max_daily_budget: parseFloat(document.getElementById('kpiMaxBudget').value) || 300,
+    stop_threshold: parseFloat(document.getElementById('kpiStopThreshold').value) || 20
+  };
+  localStorage.setItem('kpi_settings', JSON.stringify(kpi));
+  toast('KPI 目標已儲存', 'success');
+}
+
+async function runAIManager() {
+  if (campaigns.length === 0) {
+    try { const r = await fetch('/api/campaigns'); const j = await r.json(); campaigns = j.data || []; } catch(e) { toast('廣告資料載入失敗', 'error'); return; }
+  }
+  if (campaigns.length === 0) { toast('沒有廣告資料可分析', 'error'); return; }
+  const kpi = JSON.parse(localStorage.getItem('kpi_settings') || '{"target_cost_per_msg":12,"max_daily_budget":300,"stop_threshold":20}');
+  const btn = document.getElementById('runAIBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> AI 分析中…';
+  const suggList = document.getElementById('suggestionsList');
+  suggList.innerHTML = `<div class="ai-suggestions-empty"><i class="ph ph-circle-notch" style="animation:spin 1s linear infinite;font-size:36px;color:var(--accent);display:block;margin-bottom:12px;"></i><p>AI 正在分析廣告數據，請稍候…</p></div>`;
+  try {
+    const res = await fetch('/api/ai-manage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campaigns, kpi }) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const suggestions = json.suggestions || [];
+    renderSuggestions(suggestions);
+    toast('AI 建議已產生（' + suggestions.length + ' 項）', suggestions.length > 0 ? 'success' : 'error');
+  } catch (err) {
+    suggList.innerHTML = `<div class="ai-suggestions-empty"><i class="ph ph-warning"></i><p>分析失敗：${err.message}</p></div>`;
+    toast('AI 分析失敗：' + err.message, 'error');
+  } finally { btn.disabled = false; btn.innerHTML = '<i class="ph ph-sparkle"></i> 重新分析'; }
+}
+
+function getActionInfo(action) {
+  return {
+    restart: { label: '重啟活動', iconClass: 'icon-restart', icon: 'ph-play' },
+    pause: { label: '暫停投放', iconClass: 'icon-pause', icon: 'ph-pause' },
+    adjust_budget: { label: '調整預算', iconClass: 'icon-adjust', icon: 'ph-currency-circle-dollar' },
+    keep: { label: '維持現狀', iconClass: 'icon-keep', icon: 'ph-check' },
+    skip: { label: '維持現狀', iconClass: 'icon-keep', icon: 'ph-check' },
+  }[action] || { label: action, iconClass: 'icon-keep', icon: 'ph-info' };
+}
+
+function renderSuggestions(suggestions) {
+  const list = document.getElementById('suggestionsList');
+  if (!suggestions.length) { list.innerHTML = `<div class="ai-suggestions-empty"><i class="ph ph-check-circle"></i><p>目前廣告狀態良好，無需調整</p></div>`; return; }
+  const html = suggestions.map((s, idx) => {
+    const info = getActionInfo(s.action);
+    let budgetHtml = '';
+    if (s.budget_min || s.budget_suggested || s.budget_max) {
+      const min = s.budget_min || s.budget_suggested;
+      const max = s.budget_max || s.budget_suggested;
+      budgetHtml = `<div class="budget-range-box">
+        <div class="budget-range-label">建議日預算範圍</div>
+        <div class="budget-range-display">NT$${min} <span class="range-sep">～</span> NT$${max}</div>
+        <div class="budget-input-row">
+          <span class="budget-input-prefix">我要投</span>
+          <input type="number" class="budget-input" id="budget-input-${idx}" value="${s.budget_suggested || min}" min="${min}" max="${max * 2}" step="50">
+          <span class="budget-input-suffix">元／天</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="suggestion-item priority-${s.priority || 'medium'}" id="sugg-${idx}">
+      <div class="suggestion-icon ${info.iconClass}"><i class="ph ${info.icon}"></i></div>
+      <div class="suggestion-body">
+        <div class="suggestion-action-label">${info.label}</div>
+        <div class="suggestion-name">${s.campaign_name || '—'}</div>
+        <div class="suggestion-reason">${s.reason || '—'}</div>
+        ${budgetHtml}
+        <div class="suggestion-expected">${s.expected_result || ''}</div>
+        <div class="suggestion-btns">
+          <button class="approve-btn" onclick="approveSuggestion(${idx}, '${s.campaign_id}', '${s.action}', getUserBudget(${idx}, ${s.budget_suggested || 'null'}))"><i class="ph ph-check"></i> 批准</button>
+          <button class="reject-btn" onclick="rejectSuggestion(${idx})"><i class="ph ph-x"></i> 否決</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  list.innerHTML = `<div class="suggestion-list">${html}</div>`;
+}
+
+function getUserBudget(idx, fallback) {
+  const input = document.getElementById('budget-input-' + idx);
+  return input ? parseInt(input.value) || fallback : fallback;
+}
+
+async function approveSuggestion(idx, campaignId, action, newBudget) {
+  const item = document.getElementById('sugg-' + idx);
+  item.querySelectorAll('button').forEach(b => b.disabled = true);
+  const statusDiv = item.querySelector('.suggestion-btns');
+  statusDiv.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> 執行中…';
+  try {
+    await fetch('/api/execute-action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campaign_id: campaignId, action, new_daily_budget: newBudget }) });
+    statusDiv.innerHTML = '<span style="color:var(--success);font-weight:700;font-size:12px;"><i class="ph ph-check-circle"></i> 已執行</span>';
+    item.style.opacity = '0.6';
+    addActionLog(action, campaignId, '批准執行');
+    toast('已執行：' + action, 'success');
+  } catch (err) {
+    statusDiv.innerHTML = '<span style="color:var(--danger);font-size:12px;">執行失敗：' + err.message + '</span>';
+    toast('執行失敗：' + err.message, 'error');
+  }
+}
+
+function rejectSuggestion(idx) {
+  const item = document.getElementById('sugg-' + idx);
+  item.querySelector('.suggestion-btns').innerHTML = '<span style="color:var(--text-2);font-size:12px;"><i class="ph ph-x-circle"></i> 已否決</span>';
+  item.style.opacity = '0.5';
+  addActionLog('reject', '', '否決建議');
+}
+
+function addActionLog(action, campaignId, result) {
+  const logs = JSON.parse(localStorage.getItem('action_logs') || '[]');
+  logs.unshift({ time: new Date().toLocaleString('zh-TW'), action, campaignId, result });
+  if (logs.length > 20) logs.pop();
+  localStorage.setItem('action_logs', JSON.stringify(logs));
+  renderActionLog();
+}
+function renderActionLog() {
+  const logs = JSON.parse(localStorage.getItem('action_logs') || '[]');
+  const list = document.getElementById('actionLogList');
+  if (!logs.length) { list.innerHTML = '<div class="log-empty">還沒有執行紀錄</div>'; return; }
+  list.innerHTML = logs.map(l => `<div class="log-item"><div class="log-time">${l.time}</div><div>${l.result}｜${l.action}${l.campaignId ? '（ID: ' + l.campaignId + '）' : ''}</div></div>`).join('');
+}
+
+async function loadOrganicReels() {
+  const btn = document.getElementById('organicRefreshBtn');
+  const list = document.getElementById('organicReelsList');
+  btn.disabled = true;
+  list.innerHTML = '<div class="empty-state"><i class="ph ph-circle-notch" style="animation:spin 1s linear infinite;font-size:28px;color:var(--accent);display:block;margin-bottom:8px;"></i><p>載入中…</p></div>';
+  try {
+    const res = await fetch('/api/ig-organic');
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const reels = json.reels || [];
+    if (!reels.length) { list.innerHTML = '<div class="empty-state"><i class="ph ph-film-strip"></i><p>沒有找到 Reels 資料</p></div>'; return; }
+    const adTypeLabel = { messaging: '私訊廣告', conversion: '轉換廣告', reach: '觸及廣告', skip: '暫不投' };
+    const adTypeBadge = { messaging: '#e85d04', conversion: '#2d6a4f', reach: '#1565c0', skip: '#999' };
+    const contentTypeLabel = { group: '團購型', purchase: '導購型', knowledge: '知識型', lifestyle: '生活型', mixed: '混合型' };
+    const contentTypeBg = { group: '#fff3e0', purchase: '#e8f5e9', knowledge: '#e3f2fd', lifestyle: '#fce4ec', mixed: '#f3e5f5' };
+    const contentTypeColor = { group: '#e65100', purchase: '#1b5e20', knowledge: '#0d47a1', lifestyle: '#880e4f', mixed: '#4a148c' };
+
+    list.innerHTML = reels.slice(0, 10).map(r => {
+      return `<div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:16px; display:flex; gap:16px; align-items:flex-start;">
+  
+  <!-- 左邊：分數圓圈 -->
+  <div style="flex-shrink:0; text-align:center; width:72px;">
+    <div style="width:64px; height:64px; border-radius:50%; background:${r.grade_color}18; border:3px solid ${r.grade_color}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto;">
+      <div style="font-size:20px; font-weight:800; color:${r.grade_color}; line-height:1;">${r.score}</div>
+      <div style="font-size:9px; color:${r.grade_color}; font-weight:600; margin-top:1px;">分</div>
+    </div>
+    <div style="font-size:11px; font-weight:700; color:${r.grade_color}; margin-top:6px;">${r.grade_label}</div>
+  </div>
+
+  <!-- 右邊：內容 -->
+  <div style="flex:1; min-width:0;">
+    <!-- 第一行：內容類型 + 標題 -->
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+      <span style="background:${contentTypeBg[r.content_type]}; color:${contentTypeColor[r.content_type]}; font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">${contentTypeLabel[r.content_type] || r.content_type}</span>
+      <span style="font-size:13px; font-weight:600; color:#222; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;">${escapeHtml(r.caption || '（無文案）')}</span>
+    </div>
+
+    <!-- 指標列 -->
+    <div style="display:flex; gap:16px; font-size:12px; color:#666; flex-wrap:wrap; margin-bottom:10px;">
+      <span>▷ ${fmtNum(r.plays)} 播放</span>
+      <span>🔖 儲存率 <b style="color:${r.save_rate >= 2 ? '#2d6a4f' : r.save_rate >= 0.5 ? '#b5851a' : '#c62828'}">${r.save_rate}%</b></span>
+      <span>⏱ 平均觀看 <b>${r.avg_watch_sec}秒</b></span>
+      <span>👁 觸及 ${fmtNum(r.reach)}</span>
+      <span>💬 <b style="color:${r.intent_comments > 0 ? '#e85d04' : '#999'}">${r.intent_comments} 則購買意圖留言</b>／共 ${r.total_comments} 則</span>
+    </div>
+
+    <!-- 分數說明列（小字） -->
+    <div style="font-size:11px; color:#aaa; margin-bottom:10px;">
+      評分依據：留言意圖 ${r.score_breakdown?.intent ?? '-'}分 ＋ 儲存 ${r.score_breakdown?.save ?? '-'}分 ＋ 觀看 ${r.score_breakdown?.watch ?? '-'}分 ＋ 播放 ${r.score_breakdown?.plays ?? '-'}分
+    </div>
+
+    <!-- 廣告建議（只有 grade_show_ad === true 才顯示） -->
+    ${r.grade_show_ad ? `
+    <div style="background:#fff8f0; border:1px solid #ffd699; border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
+      <span style="background:${adTypeBadge[r.ad_type_recommendation]}; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:4px; white-space:nowrap;">建議投：${adTypeLabel[r.ad_type_recommendation] || r.ad_type_recommendation}</span>
+      <span style="font-size:12px; color:#555;">${escapeHtml(r.recommendation_reason || '')}</span>
+    </div>
+    ` : `
+    <div style="background:#f5f5f5; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#999; font-size:12px;">
+      ❌ 這支建議不投廣告，先優化有機成效再考慮
+    </div>
+    `}
+
+    <!-- 查看貼文 -->
+    <div style="margin-top:10px;">
+      <a href="${r.permalink}" target="_blank" style="font-size:12px; color:#e85d04; text-decoration:none; font-weight:600;">查看貼文 →</a>
+    </div>
+  </div>
+</div>`;
+    }).join('');
+    toast('載入 ' + reels.length + ' 支 Reels，已排序推薦', 'success');
+  } catch(err) {
+    list.innerHTML = '<div class="empty-state"><i class="ph ph-warning"></i><p>載入失敗：' + escapeHtml(err.message) + '</p></div>';
+    toast('載入失敗：' + err.message, 'error');
+  } finally { btn.disabled = false; }
+}
+
+loadKPISettings();
+renderActionLog();
+loadData();
+startCountdown();
+</script>
+</body>
+</html>
