@@ -335,7 +335,7 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
     </div>
     <div class="kpi-card kpi-blue">
       <div class="kpi-icon blue"><i class="ph ph-chat-circle-dots"></i></div>
-      <div class="kpi-label">私訊廣告成本</div>
+      <div class="kpi-label">平均每則成本</div>
       <div class="kpi-value skeleton" id="kpiCPM"></div>
     </div>
     <div class="kpi-card kpi-purple">
@@ -517,9 +517,9 @@ function switchTab(tabName) {
 
 function updateSummaryKPIs(data) {
   const totalSpend = data.reduce((s, c) => s + (c.spend || 0), 0);
-  const msgCampaigns = data.filter(c => getAdType(c.objective) === 'messaging' && c.messages > 0);
-  const totalMsg = msgCampaigns.reduce((s, c) => s + c.messages, 0);
-  const totalMsgSpend = msgCampaigns.reduce((s, c) => s + c.spend, 0);
+  const allWithMessages = data.filter(c => c.messages > 0);
+  const totalMsg = allWithMessages.reduce((s, c) => s + c.messages, 0);
+  const totalMsgSpend = allWithMessages.reduce((s, c) => s + c.spend, 0);
   const avgCostPerMsg = totalMsg > 0 ? totalMsgSpend / totalMsg : null;
   const bestROAS = data.filter(c => c.roas).reduce((max, c) => c.roas > max ? c.roas : max, 0) || null;
   const activeCount = data.filter(c => c.status === 'ACTIVE').length;
@@ -540,7 +540,7 @@ function updateSummaryKPIs(data) {
   };
 
   set('kpiSpend', fmtNTD(totalSpend), '過去 30 天');
-  set('kpiCPM', avgCostPerMsg !== null ? fmtNTD(avgCostPerMsg) : '—', avgCostPerMsg !== null ? '每私訊平均成本' : '暫無私訊廣告數據');
+  set('kpiCPM', avgCostPerMsg !== null ? fmtNTD(avgCostPerMsg) : '—', avgCostPerMsg !== null ? '全活動平均每則成本' : '暫無留言廣告數據');
   set('kpiROAS', bestROAS ? fmtROAS(bestROAS) : '—', bestROAS ? '最高單活動 ROAS' : '暫無轉換廣告數據');
   set('kpiActive', activeCount.toString(), '個活動執行中');
 }

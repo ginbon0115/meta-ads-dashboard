@@ -162,14 +162,16 @@ export async function onRequestGet(context) {
         const commentsData = await commentsRes.json();
         comments = commentsData.data || [];
 
-        // 購買意圖關鍵字
+        // 購買意圖關鍵字（與自動回覆觸發關鍵字一致）
         const intentKeywords = [
-          '怎麼買', '想入群', '想買', '哪裡買', '+1', '加入'
+          '連結', '想買', '+1', '🔥', '加入', '團購', '在哪', '哪裡買',
+          '怎麼買', '購買', '下單', '要買', '我要', '訂購', '預購', '報名',
+          '詢問', '私訊', 'dm', 'DM', 'link', '連', '1', '１'
         ];
 
         intentCount = comments.filter(c => {
-          const text = (c.text || '').toLowerCase();
-          return intentKeywords.some(k => text.includes(k.toLowerCase()));
+          const text = (c.text || '');
+          return intentKeywords.some(k => text.includes(k));
         }).length;
       } catch (e) {}
 
