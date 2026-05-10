@@ -1,3 +1,7 @@
 name = "meta-ads-dashboard"
 compatibility_date = "2026-01-01"
 pages_build_output_dir = "public"
+
+[[kv_namespaces]]
+binding = "IG_ORGANIC_CACHE"
+id = "3df6c062172e409c863f35c63fc19ecb"

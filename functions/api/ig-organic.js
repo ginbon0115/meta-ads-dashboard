@@ -1,343 +1,170 @@
 export async function onRequestGet(context) {
   const { env } = context;
   const token = env.META_ACCESS_TOKEN;
-  // fix: AD_ACCOUNT_ID 可能已含 act_ 前綴（如 "act_123456"），統一去掉再重新拼，避免 act_act_ 重複
   const rawAdAccountId = env.AD_ACCOUNT_ID || '';
   const adAccountId = rawAdAccountId.replace(/^act_/, '');
 
-  function classifyContent(caption) {
-    const text = (caption || '').toLowerCase();
-    const groupKeywords = ['團購', '進群', '社群', 'line', '加入', '社團', '私訊', '留言'];
-    const purchaseKeywords = ['購買', '下單', '連結', '訂購', '購買頁', '點連結', '搶購', '限量', '馬上買'];
-    const knowledgeKeywords = ['你知道嗎', '其實', '原來', '教你', '秘密', '差別', '為什麼', '認識', '注意', '迷思', '真的嗎', '檢測', '認證'];
-    const lifestyleKeywords = ['我家', '孩子', '小孩', '老婆', '日常', '分享', '帶你', '今天', '阿嫤', '家人'];
-    if (groupKeywords.some(k => text.includes(k))) return 'group';
-    if (purchaseKeywords.some(k => text.includes(k))) return 'purchase';
-    if (knowledgeKeywords.some(k => text.includes(k))) return 'knowledge';
-    if (lifestyleKeywords.some(k => text.includes(k))) return 'lifestyle';
-    return 'mixed';
-  }
+  const INTENT_KEYWORDS = ['連結','怎麼買','想知道','想了解','想入群','想買','哪裡買','🙌','+1','加入'];
+  const MIN_RATIO = 0.05; // 最低門檻 %
 
-  // 純有機評分（最高 59 分，確保有廣告數據的排前面）
-  function calculateOrganicScore(saveRate, avgWatchSec, plays, intentCount) {
-    let intentScore = 0;
-    if (intentCount >= 20) intentScore = 45;
-    else if (intentCount >= 10) intentScore = 36;
-    else if (intentCount >= 5) intentScore = 27;
-    else if (intentCount >= 2) intentScore = 18;
-    else if (intentCount >= 1) intentScore = 10;
-
-    let saveScore = 3;
-    if (saveRate >= 5) saveScore = 35;
-    else if (saveRate >= 3) saveScore = 28;
-    else if (saveRate >= 2) saveScore = 21;
-    else if (saveRate >= 1) saveScore = 14;
-    else if (saveRate >= 0.5) saveScore = 8;
-
-    let watchScore = 1;
-    if (avgWatchSec >= 25) watchScore = 15;
-    else if (avgWatchSec >= 20) watchScore = 12;
-    else if (avgWatchSec >= 15) watchScore = 9;
-    else if (avgWatchSec >= 10) watchScore = 6;
-    else if (avgWatchSec >= 6) watchScore = 3;
-
-    let playsScore = 1;
-    if (plays >= 100000) playsScore = 5;
-    else if (plays >= 50000) playsScore = 4;
-    else if (plays >= 20000) playsScore = 3;
-    else if (plays >= 10000) playsScore = 2;
-
-    const raw = intentScore + saveScore + watchScore + playsScore;
-    return {
-      total: Math.min(59, raw),
-      intent: intentScore,
-      save: saveScore,
-      watch: watchScore,
-      plays: playsScore
-    };
-  }
-
-  // 廣告數據評分（基礎 60 分起跳）
-  function calculateAdScore(adData) {
-    let score = 60;
-    const cpp = adData.cost_per_message || 0;
-    const messages = adData.messages || 0;
-
-    if (cpp <= 10) score += 30;
-    else if (cpp <= 20) score += 15;
-    else score += 5;
-
-    if (messages >= 300) score += 10;
-
-    return Math.min(100, score);
-  }
-
-  function getGrade(score) {
-    if (score >= 75) return { label: '強烈建議投', color: '#e85d04', show_ad: true };
-    if (score >= 55) return { label: '建議投', color: '#2d6a4f', show_ad: true };
-    if (score >= 35) return { label: '看情況', color: '#b5851a', show_ad: true };
-    return { label: '暫不建議投', color: '#666', show_ad: false };
-  }
-
-  function getRecommendation(contentType, saveRate, shareRate, avgWatchSec, plays, intentCount) {
-    const highSave = saveRate > 5;
-    const goodEngagement = saveRate > 2 || shareRate > 1.5;
-    const lowEngagement = saveRate < 0.5 && shareRate < 0.5 && plays < 1000;
-    const hasIntent = intentCount >= 1;
-
-    if (lowEngagement && !hasIntent) {
-      return { ad_type: 'skip', reason: '觸及太低，先優化有機成效再考慮投廣' };
+  async function batchFetch(requests, tokenStr) {
+    const chunks = [];
+    for (let i = 0; i < requests.length; i += 50) {
+      chunks.push(requests.slice(i, i + 50));
     }
-    if (hasIntent) {
-      return { ad_type: 'messaging', reason: `留言中有 ${intentCount} 則購買意圖，私訊廣告乘勝追擊直接轉換` };
-    }
-    if (contentType === 'group') {
-      if (highSave) return { ad_type: 'messaging', reason: `儲存率 ${saveRate.toFixed(1)}% 高，有進群意愿，私訊廣告直接帶人加 LINE 群` };
-      if (goodEngagement) return { ad_type: 'messaging', reason: '團購型內容互動佳，私訊廣告直接帶進 LINE 群轉換' };
-      return { ad_type: 'messaging', reason: '團購型內容 CTA 是進群，對應私訊廣告' };
-    }
-    if (contentType === 'purchase') {
-      if (highSave) return { ad_type: 'conversion', reason: `儲存率 ${saveRate.toFixed(1)}% 高，有購買意圖，轉換廣告追真實 ROAS` };
-      if (goodEngagement) return { ad_type: 'conversion', reason: '導購型內容互動佳，轉換廣告直追購買 ROAS' };
-      return { ad_type: 'reach', reason: '導購型但互動偏低，先投觸及廣告養溫，再轉換廣告收割' };
-    }
-    if (contentType === 'knowledge') {
-      if (highSave) return { ad_type: 'reach', reason: `儲存率 ${saveRate.toFixed(1)}% 高，知識型好內容，觸及廣告讓更多陌生人看到` };
-      return { ad_type: 'reach', reason: '知識型影片建立「他懂這個」印象，觸及廣告養陌生受眾最有效' };
-    }
-    if (contentType === 'lifestyle') {
-      if (shareRate > 2) return { ad_type: 'reach', reason: `分享率 ${shareRate.toFixed(1)}% 高，生活型內容有擴散力，觸及廣告讓更多人認識小赫` };
-      return { ad_type: 'reach', reason: '生活型影片適合 IP 建立，投觸及廣告讓陌生受眾認識你這個人' };
-    }
-    if (highSave) return { ad_type: 'messaging', reason: `儲存率 ${saveRate.toFixed(1)}% 高，有購買/進群意愿，私訊廣告乘勝追擊` };
-    if (shareRate > 3) return { ad_type: 'reach', reason: `分享率 ${shareRate.toFixed(1)}% 高，擴散潛力強，觸及廣告讓更多人看到` };
-    if (avgWatchSec > 15) return { ad_type: 'reach', reason: `平均觀看 ${avgWatchSec} 秒，留住率高，觸及廣告養溫受眾` };
-    return { ad_type: 'reach', reason: '建議先投觸及廣告擴大曝光，觀察受眾反應' };
+    const chunkResults = await Promise.all(chunks.map(chunk =>
+      fetch('https://graph.facebook.com/v25.0/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batch: chunk, access_token: tokenStr })
+      }).then(r => r.json()).then(d => Array.isArray(d) ? d : [])
+    ));
+    return chunkResults.flat();
   }
 
   try {
-    // 1. 取得 IG 帳號 ID
-    const pagesRes = await fetch(
-      `https://graph.facebook.com/v25.0/me/accounts?fields=id,name,instagram_business_account{id,name,username}&access_token=${token}`
-    );
-    const pagesData = await pagesRes.json();
+    // 快取讀取（TTL 1小時）
+    const CACHE_KEY = 'ig_organic_cache';
+    const cached = await context.env.IG_ORGANIC_CACHE?.get(CACHE_KEY);
+    if (cached) {
+      return new Response(cached, { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'HIT' } });
+    }
 
+    // 1. 取 IG 帳號 ID
+    const pagesRes = await fetch(`https://graph.facebook.com/v25.0/me/accounts?fields=id,name,instagram_business_account{id,name,username}&access_token=${token}`);
+    const pagesData = await pagesRes.json();
     let igId = null, igUsername = null;
-    for (const page of (pagesData.data || [])) {
-      if (page.instagram_business_account) {
-        igId = page.instagram_business_account.id;
-        igUsername = page.instagram_business_account.username;
-        break;
-      }
+    for (const p of (pagesData.data || [])) {
+      if (p.instagram_business_account) { igId = p.instagram_business_account.id; igUsername = p.instagram_business_account.username; break; }
     }
     if (!igId) { igId = '17841453561052646'; igUsername = 'hehehaxi0115'; }
 
-    // 2. Cursor-based pagination 抓全部貼文（每頁 50 筆）
+    // 2. 翻完所有公開貼文
     let allMedia = [];
-    let nextUrl = `https://graph.facebook.com/v25.0/${igId}/media?` +
-      `fields=id,caption,media_type,media_product_type,timestamp,permalink` +
-      `&limit=50&access_token=${token}`;
+    let nextUrl = `https://graph.facebook.com/v25.0/${igId}/media?fields=id,caption,media_type,media_product_type,timestamp,permalink&limit=100&access_token=${token}`;
     let pageCount = 0;
-    const MAX_PAGES = 3; // 最多抓 3 頁（150 筆），避免 CF Function 超時
-
-    while (nextUrl && allMedia.length < 500 && pageCount < MAX_PAGES) {
-      const mediaRes = await fetch(nextUrl);
-      const mediaData = await mediaRes.json();
-      const pageItems = mediaData.data || [];
-      allMedia = allMedia.concat(pageItems);
+    while (nextUrl && pageCount < 10) {
+      const r = await fetch(nextUrl);
+      const d = await r.json();
+      allMedia = allMedia.concat(d.data || []);
       pageCount++;
-
-      if (mediaData.paging && mediaData.paging.next) {
-        nextUrl = mediaData.paging.next;
-      } else {
-        nextUrl = null;
-      }
+      nextUrl = d.paging?.next || null;
     }
+    const videoMedia = allMedia.filter(m => m.media_type === 'VIDEO' || m.media_product_type === 'REELS');
 
-    // 3. 過濾影片，上限 100 支
-    const videoMedia = allMedia
-      .filter(m => m.media_type === 'VIDEO' || m.media_product_type === 'REELS')
-      .slice(0, 50); // 最多處理 50 支影片，控制總請求數
-
-    // 4. 拉廣告素材，做 permalink + video_id 雙重比對
-    let adPermalinkMap = {};  // key: permalink URL
-    let adVideoIdMap = {};    // key: video_id
+    // 3. 廣告素材比對
+    let adPermalinkMap = {}, adVideoIdMap = {};
     if (adAccountId) {
       try {
-        const adsRes = await fetch(
-          `https://graph.facebook.com/v25.0/act_${adAccountId}/ads` +
-          `?fields=id,name,creative{id,instagram_permalink_url,video_id},insights.date_preset(last_90d){spend,actions}` +
-          `&limit=100&access_token=${token}`
-        );
+        const adsRes = await fetch(`https://graph.facebook.com/v25.0/act_${adAccountId}/ads?fields=id,name,creative{id,instagram_permalink_url,video_id},insights.date_preset(last_90d){spend,actions}&limit=200&access_token=${token}`);
         const adsData = await adsRes.json();
+        const MSG_TYPES = ['onsite_conversion.messaging_conversation_started_7d','onsite_conversion.total_messaging_connection','onsite_conversion.messaging_first_reply','messaging_first_reply'];
         for (const ad of (adsData.data || [])) {
           const igUrl = ad.creative?.instagram_permalink_url;
           const videoId = ad.creative?.video_id;
-
-          const insights = ad.insights?.data?.[0] || {};
-          const spendUSD = parseFloat(insights.spend || 0);
-          const spend = Math.round(spendUSD * 30); // USD → NT$
-          const actions = insights.actions || [];
-          // fix: 新增 messaging_first_reply 作為第三種匹配
-          const msgAction = actions.find(a =>
-            a.action_type === 'onsite_conversion.messaging_conversation_started_7d' ||
-            a.action_type === 'onsite_conversion.total_messaging_connection' ||
-            a.action_type === 'onsite_conversion.messaging_first_reply'
-          );
-          const msgCount = parseInt(msgAction?.value || 0);
-          const costPerMsg = msgCount > 0 ? Math.round(spend / msgCount * 100) / 100 : null;
-
-          const adEntry = {
-            ad_name: ad.name,
-            spend,
-            messages: msgCount,
-            cost_per_message: costPerMsg
-          };
-
-          // 雙重索引：permalink 比對（含尾斜線正規化）
-          if (igUrl) {
-            const normalizedUrl = igUrl.replace(/\/$/, '');
-            adPermalinkMap[normalizedUrl] = adEntry;
-            adPermalinkMap[normalizedUrl + '/'] = adEntry;
-          }
-          // 雙重索引：video_id 比對（creative.video_id vs media.id）
-          if (videoId) {
-            adVideoIdMap[videoId] = adEntry;
-          }
+          const ins = ad.insights?.data?.[0] || {};
+          const spend = parseFloat(ins.spend || 0);
+          const actions = ins.actions || [];
+          let msgCount = 0;
+          for (const t of MSG_TYPES) { const f = actions.find(a => a.action_type === t); if (f) msgCount = Math.max(msgCount, parseInt(f.value || 0)); }
+          const adEntry = { ad_name: ad.name, spend, messages: msgCount, cost_per_message: msgCount > 0 ? Math.round(spend / msgCount * 100) / 100 : null };
+          if (igUrl) { const n = igUrl.replace(/\/$/, ''); adPermalinkMap[n] = adEntry; adPermalinkMap[n + '/'] = adEntry; }
+          if (videoId) adVideoIdMap[videoId] = adEntry;
         }
-      } catch (e) {
-        // 廣告 API 失敗不影響主流程
-      }
+      } catch (_) {}
     }
 
-    // 5. 查所有影片的 insights + 留言
-    const reels = await Promise.all(videoMedia.map(async (m) => {
-      let totalTime = 0, reach = 0, saved = 0, shares = 0, avgWatch = 0;
-      try {
-        const insRes = await fetch(
-          `https://graph.facebook.com/v25.0/${m.id}/insights?` +
-          `metric=reach,saved,shares,ig_reels_avg_watch_time,ig_reels_video_view_total_time` +
-          `&access_token=${token}`
-        );
-        const insData = await insRes.json();
-        for (const item of (insData.data || [])) {
-          const v = item.values?.[0]?.value ?? item.value ?? 0;
-          if (item.name === 'reach') reach = v;
-          if (item.name === 'saved') saved = v;
-          if (item.name === 'shares') shares = v;
-          if (item.name === 'ig_reels_avg_watch_time') avgWatch = v;
-          if (item.name === 'ig_reels_video_view_total_time') totalTime = v;
-        }
-      } catch (e) {}
+    // 4. Batch 拉全部影片 insights
+    const insightRequests = videoMedia.map(m => ({
+      method: 'GET',
+      relative_url: `${m.id}/insights?metric=reach,saved,shares,ig_reels_avg_watch_time,ig_reels_video_view_total_time`
+    }));
+    // 5. Batch 拉全部影片留言（全部，不限前50）
+    const commentRequests = videoMedia.map(m => ({
+      method: 'GET',
+      relative_url: `${m.id}/comments?fields=id,text&summary=true&limit=100`
+    }));
 
-      // fix: 留言抓取獨立 try/catch，確保 comments 一定被執行並取得結果
-      let comments = [];
-      let intentCount = 0;
-      let totalComments = 0;
-      try {
-        const commentsTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('comments timeout')), 2000)
-        );
-        const commentsRes = await Promise.race([
-          fetch(`https://graph.facebook.com/v25.0/${m.id}/comments?fields=id,text&summary=true&limit=100&access_token=${token}`),
-          commentsTimeout
-        ]);
-        const commentsData = await commentsRes.json();
-        comments = commentsData.data || [];
-        // fix: 優先用 API 回傳的 summary.total_count，fallback 用 data 長度
-        totalComments = commentsData.summary?.total_count ?? comments.length;
+    const [insightResults, commentResults] = await Promise.all([
+      batchFetch(insightRequests, token),
+      batchFetch(commentRequests, token)
+    ]);
 
-        const intentKeywords = [
-          '連結', '想買', '+1', '🔥', '加入', '團購', '在哪', '哪裡買',
-          '怎麼買', '購買', '下單', '要買', '我要', '訂購', '預購', '報名',
-          '詢問', '私訊', 'dm', 'DM', 'link', '連', '1', '１'
-        ];
-
-        intentCount = comments.filter(c => {
-          const text = (c.text || '');
-          return intentKeywords.some(k => text.includes(k));
-        }).length;
-      } catch (e) {
-        // 留言 API 失敗：totalComments 保持 0，不影響主流程
+    // 6. 整合資料，計算 intent_ratio
+    const reels = videoMedia.map((m, i) => {
+      // insights
+      let reach = 0, saved = 0, shares = 0, avgWatch = 0, totalTime = 0;
+      const ins = insightResults[i];
+      if (ins && ins.code === 200) {
+        try {
+          const d = JSON.parse(ins.body);
+          for (const item of (d.data || [])) {
+            const v = item.values?.[0]?.value ?? item.value ?? 0;
+            if (item.name === 'reach') reach = v;
+            if (item.name === 'saved') saved = v;
+            if (item.name === 'shares') shares = v;
+            if (item.name === 'ig_reels_avg_watch_time') avgWatch = v;
+            if (item.name === 'ig_reels_video_view_total_time') totalTime = v;
+          }
+        } catch (_) {}
       }
-
       const plays = avgWatch > 0 ? Math.round(totalTime / avgWatch) : 0;
-      const saveRate = reach > 0 ? saved / reach * 100 : 0;
-      const shareRate = reach > 0 ? shares / reach * 100 : 0;
       const watchSec = Math.round(avgWatch / 1000);
 
-      // 6. 廣告交叉比對：permalink 優先，fallback video_id
+      // comments
+      let totalComments = 0, intentComments = 0;
+      const cmt = commentResults[i];
+      if (cmt && cmt.code === 200) {
+        try {
+          const d = JSON.parse(cmt.body);
+          const comments = d.data || [];
+          totalComments = d.summary?.total_count ?? comments.length;
+          intentComments = comments.filter(c => INTENT_KEYWORDS.some(k => (c.text || '').includes(k))).length;
+        } catch (_) {}
+      }
+
+      const intentRatio = plays > 0 ? intentComments / plays * 100 : 0;
+
+      // ad data
       let adData = null;
-      const normalizedPermalink = (m.permalink || '').replace(/\/$/, '');
-      if (normalizedPermalink && adPermalinkMap[normalizedPermalink]) {
-        adData = adPermalinkMap[normalizedPermalink];
-      } else if (m.permalink && adPermalinkMap[m.permalink]) {
-        adData = adPermalinkMap[m.permalink];
-      } else if (m.id && adVideoIdMap[m.id]) {
-        adData = adVideoIdMap[m.id];
-      }
-
-      // 7. 依有無廣告數據走不同評分邏輯
-      let scoreData, totalScore;
-      if (adData) {
-        totalScore = calculateAdScore(adData);
-        const cpp = adData.cost_per_message || 0;
-        scoreData = {
-          total: totalScore,
-          ad_base: 60,
-          ad_cpp_bonus: cpp <= 10 ? 30 : cpp <= 20 ? 15 : 5,
-          ad_msg_bonus: adData.messages >= 300 ? 10 : 0
-        };
-      } else {
-        const organic = calculateOrganicScore(saveRate, watchSec, plays, intentCount);
-        totalScore = organic.total;
-        scoreData = { total: totalScore, intent: organic.intent, save: organic.save, watch: organic.watch, plays: organic.plays };
-      }
-
-      const contentType = classifyContent(m.caption);
-      const rec = getRecommendation(contentType, saveRate, shareRate, watchSec, plays, intentCount);
-      const grade = getGrade(totalScore);
+      const normLink = (m.permalink || '').replace(/\/$/, '');
+      if (normLink && adPermalinkMap[normLink]) adData = adPermalinkMap[normLink];
+      else if (m.permalink && adPermalinkMap[m.permalink]) adData = adPermalinkMap[m.permalink];
+      else if (m.id && adVideoIdMap[m.id]) adData = adVideoIdMap[m.id];
 
       return {
         id: m.id,
         caption: (m.caption || '').substring(0, 100),
         timestamp: m.timestamp,
         permalink: m.permalink,
-        media_type: m.media_type,
-        media_product_type: m.media_product_type,
-        plays, reach, saved, shares,
+        plays,
+        reach,
+        saved,
+        shares,
         avg_watch_sec: watchSec,
-        save_rate: Math.round(saveRate * 10) / 10,
-        share_rate: Math.round(shareRate * 10) / 10,
-        comments: intentCount,
-        totalComments: totalComments,
-        buyIntentComments: intentCount,
-        intent_comments: intentCount,
+        intent_comments: intentComments,
         total_comments: totalComments,
-        score: totalScore,
-        grade_label: grade.label,
-        grade_color: grade.color,
-        grade_show_ad: grade.show_ad,
-        score_breakdown: scoreData,
-        content_type: contentType,
-        ad_type_recommendation: rec.ad_type,
-        recommendation_reason: rec.reason,
+        intent_ratio: Math.round(intentRatio * 10000) / 10000,
+        ad_data: adData,
         ig_username: igUsername,
-        ad_data: adData
       };
-    }));
+    });
 
-    reels.sort((a, b) => b.score - a.score);
+    // 7. 過濾 + 排序
+    const filtered = reels
+      .filter(r => r.intent_ratio >= MIN_RATIO)
+      .sort((a, b) => b.intent_ratio - a.intent_ratio);
 
-    return new Response(JSON.stringify({
-      ig_id: igId, ig_username: igUsername, reels,
-      debug: {
-        total_media: allMedia.length,
-        video_count: videoMedia.length,
-        ad_matched: reels.filter(r => r.ad_data !== null).length,
-        pages_error: pagesData.error || null
-      }
-    }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+    const responseBody = JSON.stringify({
+      ig_id: igId,
+      ig_username: igUsername,
+      total_videos: videoMedia.length,
+      shown_videos: filtered.length,
+      reels: filtered,
+      debug: { total_media: allMedia.length, video_count: videoMedia.length, pages_fetched: pageCount }
+    });
+    await context.env.IG_ORGANIC_CACHE?.put(CACHE_KEY, responseBody, { expirationTtl: 3600 });
+    return new Response(responseBody, { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'X-Cache': 'MISS' } });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {

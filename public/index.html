@@ -267,6 +267,20 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
   .section-kpi-row { grid-template-columns: 1fr 1fr; }
   .kpi-inputs { grid-template-columns: 1fr; }
 }
+
+/* AD CREATIVES */
+.ad-creative-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: flex-start; }
+.ad-creative-card:hover { box-shadow: 0 4px 16px rgba(249,115,22,0.08); }
+.ad-creative-thumb { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; background: var(--surface-2); flex-shrink: 0; border: 1px solid var(--border); }
+.ad-creative-thumb-placeholder { width: 72px; height: 72px; border-radius: 10px; background: var(--surface-2); flex-shrink: 0; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--border); }
+.ad-creative-thumb-placeholder i { font-size: 28px; }
+.rec-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+.rec-good { background: rgba(34,197,94,0.12); color: #16a34a; }
+.rec-ok { background: rgba(245,158,11,0.12); color: #d97706; }
+.rec-stop { background: rgba(239,68,68,0.12); color: #dc2626; }
+.rec-na { background: rgba(107,91,69,0.08); color: var(--text-2); }
+.ad-date-select { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 13px; cursor: pointer; outline: none; font-family: inherit; }
+.ad-date-select:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -381,47 +395,91 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
     </div>
   </div>
 
+
 </div>
 
 <!-- TAB 3: AI 投廣室 -->
 <div class="tab-content" id="content-ai">
   <div class="ai-room">
 
-    <div class="kpi-setup-card">
-      <div class="kpi-setup-title"><i class="ph ph-sliders-horizontal"></i> KPI 目標設定</div>
-      <div class="kpi-inputs">
-        <div class="kpi-field">
-          <label>目標每私訊成本 (NT$)</label>
-          <input type="number" id="kpiTargetCost" placeholder="例：12" value="">
+    <!-- 區塊一：投廣計畫產生器 -->
+    <div style="background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px;">
+      <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+        <i class="ph ph-rocket-launch" style="color:var(--accent); font-size:18px;"></i>
+        投廣計畫產生器
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+        <!-- 選影片 -->
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">選一支影片</label>
+          <select id="planReelSelect" style="width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit; color:var(--text); outline:none;">
+            <option value="">— 先到 Reels 推薦頁載入資料 —</option>
+          </select>
         </div>
-        <div class="kpi-field">
-          <label>單活動日預算上限 (NT$)</label>
-          <input type="number" id="kpiMaxBudget" placeholder="例：300" value="">
+
+        <!-- 廣告類型 -->
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">廣告類型</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; padding-top:4px;">
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer; font-weight:500;">
+              <input type="radio" name="planAdType" value="reach" style="accent-color:var(--blue);"> <span style="color:#1565c0;">觸及</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer; font-weight:500;">
+              <input type="radio" name="planAdType" value="engagement" checked style="accent-color:var(--accent);"> <span style="color:#e85d04;">互動</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer; font-weight:500;">
+              <input type="radio" name="planAdType" value="conversion" style="accent-color:#7c3aed;"> <span style="color:#7c3aed;">轉換</span>
+            </label>
+          </div>
         </div>
-        <div class="kpi-field">
-          <label>停投門檻（每私訊超過 NT$）</label>
-          <input type="number" id="kpiStopThreshold" placeholder="例：20" value="">
+
+        <!-- 日預算 -->
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">日預算 NT$</label>
+          <input type="number" id="planBudget" value="300" placeholder="例：300" style="width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:10px; padding:10px 12px; font-size:13px; font-family:inherit; color:var(--text); outline:none;">
         </div>
       </div>
-      <button class="save-kpi-btn" onclick="saveKPI()"><i class="ph ph-floppy-disk"></i> 儲存目標</button>
+
+      <button onclick="generatePlan()" id="generatePlanBtn" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 24px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:8px; margin-bottom:20px;">
+        <i class="ph ph-sparkle"></i> 產生投廣計畫
+      </button>
+
+      <div id="planOutput" style="display:none; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:20px;"></div>
     </div>
 
-    <div class="suggestions-card">
-      <div class="suggestions-header">
-        <div class="suggestions-title"><i class="ph ph-robot"></i> AI 本次建議</div>
-        <button class="run-ai-btn" id="runAIBtn" onclick="runAIManager()"><i class="ph ph-sparkle"></i> 讓 AI 分析</button>
-      </div>
-      <div id="suggestionsList">
-        <div class="ai-suggestions-empty">
-          <i class="ph ph-lightning"></i>
-          <p>點擊「讓 AI 分析」，根據目前廣告資料產生建議行動</p>
+    <!-- 區塊二：廣告監控 + 停投決策 -->
+    <div style="background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+        <div style="font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px;">
+          <i class="ph ph-chart-line-up" style="color:var(--accent); font-size:18px;"></i>
+          廣告監控 + 停投決策
         </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:12px; color:var(--text-2); font-weight:600;">每私訊目標 NT$</span>
+          <input type="number" id="targetCPMsg" value="15" style="width:70px; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:var(--text); outline:none; font-weight:700;">
+          <button onclick="loadMonitor()" style="background:var(--accent-light); border:1px solid var(--border); color:var(--accent); border-radius:8px; padding:7px 14px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:6px;">
+            <i class="ph ph-arrows-clockwise"></i> 載入
+          </button>
+        </div>
+      </div>
+      <div id="monitorList">
+        <div class="empty-state"><i class="ph ph-chart-line-up"></i><p>點「載入」查看廣告成效與停投建議</p></div>
       </div>
     </div>
 
-    <div class="action-log-card">
-      <div class="action-log-header"><i class="ph ph-clock-clockwise"></i> 執行紀錄</div>
-      <div class="action-log-list" id="actionLogList"><div class="log-empty">還沒有執行紀錄</div></div>
+    <!-- 區塊三：預算試算機 -->
+    <div style="background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px;">
+      <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+        <i class="ph ph-calculator" style="color:var(--accent); font-size:18px;"></i>
+        預算試算機
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-2);">日預算 NT$</span>
+        <input type="number" id="calcBudgetInput" value="300" style="width:100px; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; padding:8px 12px; font-size:14px; font-family:inherit; color:var(--text); font-weight:700; outline:none;">
+        <button onclick="runCalc()" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;">試算</button>
+      </div>
+      <div id="calcResult" style="display:none; display:grid; grid-template-columns:repeat(3,1fr); gap:12px;"></div>
     </div>
 
   </div>
@@ -977,44 +1035,247 @@ function runImprove() {
   }, document.getElementById('panelContent'));
 }
 
-function loadKPISettings() {
-  const kpi = JSON.parse(localStorage.getItem('kpi_settings') || '{}');
-  if (kpi.target_cost_per_msg) document.getElementById('kpiTargetCost').value = kpi.target_cost_per_msg;
-  if (kpi.max_daily_budget) document.getElementById('kpiMaxBudget').value = kpi.max_daily_budget;
-  if (kpi.stop_threshold) document.getElementById('kpiStopThreshold').value = kpi.stop_threshold;
-}
-function saveKPI() {
-  const kpi = {
-    target_cost_per_msg: parseFloat(document.getElementById('kpiTargetCost').value) || 12,
-    max_daily_budget: parseFloat(document.getElementById('kpiMaxBudget').value) || 300,
-    stop_threshold: parseFloat(document.getElementById('kpiStopThreshold').value) || 20
+// ─── 投廣室 ───────────────────────────────
+
+// 當 Reels 資料載入後填入下拉選單
+function populatePlanReelSelect(reels) {
+  const sel = document.getElementById('planReelSelect');
+  sel.innerHTML = '<option value="">— 請選擇一支影片 —</option>';
+  reels.forEach((r, i) => {
+    const label = `${r.intent_ratio.toFixed(2)}% | ${(r.caption||'').substring(0,30)}`;
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = label;
+    opt.dataset.reel = JSON.stringify(r);
+    sel.appendChild(opt);
+  });
+  // 預設選第一支並帶入推薦廣告類型
+  if (reels.length > 0) {
+    sel.value = 0;
+    syncAdType(reels[0]);
+  }
+  sel.onchange = function() {
+    const opt = this.options[this.selectedIndex];
+    if (opt.dataset.reel) syncAdType(JSON.parse(opt.dataset.reel));
   };
-  localStorage.setItem('kpi_settings', JSON.stringify(kpi));
-  toast('KPI 目標已儲存', 'success');
 }
 
-async function runAIManager() {
-  if (campaigns.length === 0) {
-    try { const r = await fetch('/api/campaigns'); const j = await r.json(); campaigns = j.data || []; } catch(e) { toast('廣告資料載入失敗', 'error'); return; }
-  }
-  if (campaigns.length === 0) { toast('沒有廣告資料可分析', 'error'); return; }
-  const kpi = JSON.parse(localStorage.getItem('kpi_settings') || '{"target_cost_per_msg":12,"max_daily_budget":300,"stop_threshold":20}');
-  const btn = document.getElementById('runAIBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> AI 分析中…';
-  const suggList = document.getElementById('suggestionsList');
-  suggList.innerHTML = `<div class="ai-suggestions-empty"><i class="ph ph-circle-notch" style="animation:spin 1s linear infinite;font-size:36px;color:var(--accent);display:block;margin-bottom:12px;"></i><p>AI 正在分析廣告數據，請稍候…</p></div>`;
+function syncAdType(reel) {
+  // 根據 intent_ratio 自動選廣告類型
+  let type = 'reach';
+  if (reel.intent_ratio >= 0.3) type = 'conversion';
+  else if (reel.intent_ratio >= 0.1) type = 'engagement';
+  const radio = document.querySelector(`input[name="planAdType"][value="${type}"]`);
+  if (radio) radio.checked = true;
+}
+
+function generatePlan() {
+  const sel = document.getElementById('planReelSelect');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.dataset.reel) { toast('請先到 Reels 推薦頁載入資料', 'error'); return; }
+  const reel = JSON.parse(opt.dataset.reel);
+  const adType = document.querySelector('input[name="planAdType"]:checked')?.value || 'engagement';
+  const budget = parseInt(document.getElementById('planBudget').value) || 300;
+
+  const metaObjective = {
+    reach: '觸及人數（Reach）',
+    engagement: '互動 › 訊息（Engagement › Messages）',
+    conversion: '銷售（Sales）'
+  };
+  const days = adType === 'reach' ? 7 : adType === 'engagement' ? 5 : 3;
+  const totalBudget = budget * days;
+
+  const audienceTagStyle = 'background:#EFF6FF; border:1px solid #BFDBFE; color:#1D4ED8; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px; margin:3px 3px 3px 0;';
+  const audienceRowStyle = 'display:flex; flex-wrap:wrap; gap:0; margin-top:10px;';
+
+  const audienceBlockMap = {
+    reach: `
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-users-three"></i> 類似廣告受眾（Lookalike） 1%</span>
+        <span style="${audienceTagStyle}"><i class="ph ph-instagram-logo"></i> 來源：與你 IG 互動過的用戶（過去 365 天）</span>
+      </div>
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-calendar-blank"></i> 年齡：25–44</span>
+        <span style="${audienceTagStyle}"><i class="ph ph-map-pin"></i> 地區：台灣</span>
+      </div>`,
+    engagement: `
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-star"></i> 自訂廣告受眾（Custom Audience）：與你 IG 互動過（過去 365 天）</span>
+      </div>
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-video"></i> 自訂廣告受眾（Custom Audience）：影片觀看 25% 以上（過去 180 天）</span>
+      </div>
+      <div style="${audienceRowStyle}">
+        <span style="background:#FFF1F2; border:1px solid #FECDD3; color:#BE123C; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px; margin:3px 3px 3px 0;"><i class="ph ph-prohibit"></i> 排除：已加入 LINE 群（如有上傳名單）</span>
+      </div>`,
+    conversion: `
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-upload-simple"></i> 自訂廣告受眾（Custom Audience）：LINE 群成員名單（上傳 CSV）</span>
+      </div>
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-users-three"></i> 類似廣告受眾（Lookalike） 1%：以購買者名單建立</span>
+      </div>
+      <div style="${audienceRowStyle}">
+        <span style="${audienceTagStyle}"><i class="ph ph-shopping-cart"></i> 轉換事件：購買（Purchase）</span>
+      </div>`
+  };
+
+  const ctaMap = {
+    reach: '了解更多',
+    engagement: '傳送訊息',
+    conversion: '立即購買'
+  };
+  const copyMap = {
+    reach: `用這支 Reel 原始影片直接投放，不加多餘文字。標題可加一句問句吸引點擊，例如：「你知道嗎？」或「我家都這樣用」`,
+    engagement: `標題帶入產品核心利益 + 行動呼籲。例如：「想了解怎麼入手？點下方傳訊息給我」。確保私訊自動回覆已設定。`,
+    conversion: `文案直接說優惠：「限時價 NT$XXX，點連結直接下單」。搭配分潤頁連結，清楚標示價格與效期。`
+  };
+
+  const html = `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">選定影片</div>
+      <div style="font-size:13px; font-weight:600; color:var(--text);">${escapeHtml((reel.caption||'').substring(0,60))}...</div>
+      <div style="font-size:12px; color:#e85d04; margin-top:2px;">關鍵字留言率 ${reel.intent_ratio.toFixed(4)}%・播放 ${fmtNum(reel.plays)}</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px;">
+        <div style="font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase;">廣告活動目標</div>
+        <div style="font-size:14px; font-weight:800; color:var(--accent);">${metaObjective[adType]}</div>
+        <div style="font-size:12px; color:var(--text-2); margin-top:4px;">CTA：${ctaMap[adType]}</div>
+      </div>
+      <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px;">
+        <div style="font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase;">預算規劃</div>
+        <div style="font-size:15px; font-weight:800; color:var(--accent);">NT$${budget}/天 × ${days} 天</div>
+        <div style="font-size:12px; color:var(--text-2); margin-top:4px;">總預算 NT$${totalBudget.toLocaleString()}</div>
+      </div>
+    </div>
+    <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:2px; text-transform:uppercase;">廣告受眾</div>
+      ${audienceBlockMap[adType]}
+    </div>
+    <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase;">文案建議</div>
+      <div style="font-size:13px; color:var(--text); line-height:1.6;">${copyMap[adType]}</div>
+    </div>
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <a href="https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=893698616001048"
+         target="_blank"
+         style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; background:#1877F2; color:#fff; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; text-decoration:none;">
+        <i class="ph ph-arrow-square-out"></i> 前往 Meta 廣告管理員
+      </a>
+      <button onclick="copyPlanSummary()" style="background:var(--accent-light); border:1px solid var(--border); color:var(--accent); border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:8px;">
+        <i class="ph ph-copy"></i> 複製設定摘要
+      </button>
+    </div>
+  `;
+
+  const output = document.getElementById('planOutput');
+  output.style.display = 'block';
+  output.innerHTML = html;
+  toast('投廣計畫產生完成', 'success');
+}
+
+function copyPlanSummary() {
+  const sel = document.getElementById('planReelSelect');
+  const opt = sel ? sel.options[sel.selectedIndex] : null;
+  const reel = (opt && opt.dataset.reel) ? JSON.parse(opt.dataset.reel) : null;
+  const adType = document.querySelector('input[name="planAdType"]:checked')?.value || 'engagement';
+  const budget = parseInt(document.getElementById('planBudget').value) || 300;
+  const days = adType === 'reach' ? 7 : adType === 'engagement' ? 5 : 3;
+  const totalBudget = budget * days;
+
+  const metaObjective = {
+    reach: '觸及人數（Reach）',
+    engagement: '互動 › 訊息（Engagement › Messages）',
+    conversion: '銷售（Sales）'
+  };
+  const audienceSummary = {
+    reach: '類似廣告受眾（Lookalike）1%・來源：IG 互動用戶（365天）・年齡 25–44・地區：台灣',
+    engagement: '自訂受眾：IG 互動（365天）+ 影片觀看 25%（180天）・排除已入群名單',
+    conversion: '自訂受眾：LINE 群 CSV + 類似受眾 1%（購買者）・轉換事件：Purchase'
+  };
+
+  const caption = reel ? escapeHtml((reel.caption || '').substring(0, 60)) + '...' : '（未選定影片）';
+  const text = [
+    '📋 Meta 廣告投放設定摘要',
+    '─────────────────',
+    `📹 影片：${caption}`,
+    `🎯 廣告活動目標：${metaObjective[adType]}`,
+    `👥 廣告受眾：${audienceSummary[adType]}`,
+    `💰 預算：NT$${budget}/天 × ${days} 天（總計 NT$${totalBudget.toLocaleString()}）`,
+    '─────────────────',
+    '由 Meta 廣告儀表板產生'
+  ].join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    toast('設定摘要已複製到剪貼簿', 'success');
+  }).catch(() => {
+    toast('複製失敗，請手動複製', 'error');
+  });
+}
+
+async function loadMonitor() {
+  const list = document.getElementById('monitorList');
+  const target = parseFloat(document.getElementById('targetCPMsg').value) || 15;
+  list.innerHTML = '<div class="empty-state"><i class="ph ph-circle-notch" style="animation:spin 1s linear infinite;font-size:24px;color:var(--accent);display:block;margin-bottom:8px;"></i><p>載入中…</p></div>';
   try {
-    const res = await fetch('/api/ai-manage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campaigns, kpi }) });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const res = await fetch('/api/campaigns');
     const json = await res.json();
-    const suggestions = json.suggestions || [];
-    renderSuggestions(suggestions);
-    toast('AI 建議已產生（' + suggestions.length + ' 項）', suggestions.length > 0 ? 'success' : 'error');
-  } catch (err) {
-    suggList.innerHTML = `<div class="ai-suggestions-empty"><i class="ph ph-warning"></i><p>分析失敗：${err.message}</p></div>`;
-    toast('AI 分析失敗：' + err.message, 'error');
-  } finally { btn.disabled = false; btn.innerHTML = '<i class="ph ph-sparkle"></i> 重新分析'; }
+    const active = (json.data || []).filter(c => c.status === 'ACTIVE' && c.spend > 0);
+    if (!active.length) {
+      list.innerHTML = '<div class="empty-state"><i class="ph ph-check-circle"></i><p>目前沒有執行中的廣告</p></div>';
+      return;
+    }
+    list.innerHTML = active.map(c => {
+      const cpp = c.cost_per_message;
+      let decision, dColor, dBg;
+      if (cpp === null) { decision = '無私訊資料'; dColor = '#888'; dBg = '#f5f5f5'; }
+      else if (cpp <= target) { decision = '🟢 繼續投'; dColor = '#16a34a'; dBg = '#f0fdf4'; }
+      else if (cpp <= target * 1.5) { decision = '🟡 觀察'; dColor = '#d97706'; dBg = '#fffbeb'; }
+      else { decision = '🔴 建議停投'; dColor = '#dc2626'; dBg = '#fef2f2'; }
+
+      return `<div style="background:${dBg}; border:1px solid ${dColor}33; border-radius:10px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(c.name)}</div>
+          <div style="font-size:12px; color:var(--text-2); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap;">
+            <span>花費 <b>NT$${Math.round(c.spend).toLocaleString()}</b></span>
+            ${c.messages > 0 ? `<span>私訊 <b>${c.messages}</b> 則</span>` : ''}
+            ${cpp !== null ? `<span>每私訊 <b style="color:${dColor};">NT$${cpp.toFixed(0)}</b></span>` : ''}
+          </div>
+        </div>
+        <div style="font-size:13px; font-weight:800; color:${dColor}; white-space:nowrap;">${decision}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty-state"><i class="ph ph-warning"></i><p>載入失敗：' + escapeHtml(e.message) + '</p></div>';
+  }
+}
+
+function runCalc() {
+  const budget = parseInt(document.getElementById('calcBudgetInput').value) || 300;
+  // 台灣 FB 廣告平均參數（保守估計）
+  const cpm = 80; // NT$80 per 1000 impressions
+  const msgRate = 0.002; // 0.2% of reach send message
+  const joinRate = 0.75; // 75% of messages join group
+
+  const reach = Math.round(budget / cpm * 1000);
+  const messages = Math.round(reach * msgRate);
+  const joins = Math.round(messages * joinRate);
+
+  const result = document.getElementById('calcResult');
+  result.style.display = 'grid';
+  result.innerHTML = [
+    { label: '預估觸及', value: fmtNum(reach) + ' 人', sub: `以 CPM NT$${cpm} 估算`, color: 'var(--blue)' },
+    { label: '預估私訊', value: messages + ' 則', sub: `觸及人數 × 0.2%`, color: 'var(--accent)' },
+    { label: '預估進群', value: joins + ' 人', sub: `私訊中約 75% 加入`, color: 'var(--success)' },
+  ].map(item => `
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center;">
+      <div style="font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">${item.label}</div>
+      <div style="font-size:22px; font-weight:800; color:${item.color};">${item.value}</div>
+      <div style="font-size:11px; color:var(--text-2); margin-top:4px;">${item.sub}</div>
+    </div>
+  `).join('');
+  toast('試算完成', 'success');
 }
 
 function getActionInfo(action) {
@@ -1098,13 +1359,6 @@ function addActionLog(action, campaignId, result) {
   logs.unshift({ time: new Date().toLocaleString('zh-TW'), action, campaignId, result });
   if (logs.length > 20) logs.pop();
   localStorage.setItem('action_logs', JSON.stringify(logs));
-  renderActionLog();
-}
-function renderActionLog() {
-  const logs = JSON.parse(localStorage.getItem('action_logs') || '[]');
-  const list = document.getElementById('actionLogList');
-  if (!logs.length) { list.innerHTML = '<div class="log-empty">還沒有執行紀錄</div>'; return; }
-  list.innerHTML = logs.map(l => `<div class="log-item"><div class="log-time">${l.time}</div><div>${l.result}｜${l.action}${l.campaignId ? '（ID: ' + l.campaignId + '）' : ''}</div></div>`).join('');
 }
 
 async function loadOrganicReels() {
@@ -1118,43 +1372,45 @@ async function loadOrganicReels() {
     if (json.error) throw new Error(json.error);
     const reels = json.reels || [];
     if (!reels.length) { list.innerHTML = '<div class="empty-state"><i class="ph ph-film-strip"></i><p>沒有找到 Reels 資料</p></div>'; return; }
-    const adTypeLabel = { messaging: '私訊廣告', conversion: '轉換廣告', reach: '觸及廣告', skip: '暫不投' };
-    const adTypeBadge = { messaging: '#e85d04', conversion: '#2d6a4f', reach: '#1565c0', skip: '#999' };
-    const contentTypeLabel = { group: '團購型', purchase: '導購型', knowledge: '知識型', lifestyle: '生活型', mixed: '混合型' };
-    const contentTypeBg = { group: '#fff3e0', purchase: '#e8f5e9', knowledge: '#e3f2fd', lifestyle: '#fce4ec', mixed: '#f3e5f5' };
-    const contentTypeColor = { group: '#e65100', purchase: '#1b5e20', knowledge: '#0d47a1', lifestyle: '#880e4f', mixed: '#4a148c' };
-
-    list.innerHTML = reels.slice(0, 10).map(r => {
+    list.innerHTML = reels.map(r => {
+      const ratioColor = r.intent_ratio >= 0.3 ? '#dc2626' : r.intent_ratio >= 0.1 ? '#d97706' : '#b45309';
+      const adRec = r.intent_ratio >= 0.3
+        ? { label: '轉換廣告', sub: '導至分潤頁', color: '#7c3aed' }
+        : r.intent_ratio >= 0.1
+        ? { label: '互動廣告', sub: '私訊引進 LINE 群', color: '#e85d04' }
+        : { label: '觸及廣告', sub: '擴散冷受眾曝光', color: '#1565c0' };
       return `<div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:16px; display:flex; gap:16px; align-items:flex-start;">
-  
-  <!-- 左邊：分數圓圈 -->
-  <div style="flex-shrink:0; text-align:center; width:72px;">
-    <div style="width:64px; height:64px; border-radius:50%; background:${r.grade_color}18; border:3px solid ${r.grade_color}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto;">
-      <div style="font-size:20px; font-weight:800; color:${r.grade_color}; line-height:1;">${r.score}</div>
-      <div style="font-size:9px; color:${r.grade_color}; font-weight:600; margin-top:1px;">分</div>
+
+  <div style="flex-shrink:0; text-align:center; width:76px;">
+    <div style="width:68px; height:68px; border-radius:50%; background:${ratioColor}18; border:3px solid ${ratioColor}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto;">
+      <div style="font-size:16px; font-weight:800; color:${ratioColor}; line-height:1;">${r.intent_ratio.toFixed(2)}%</div>
+      <div style="font-size:9px; color:${ratioColor}; font-weight:600; margin-top:2px;">留言率</div>
     </div>
-    <div style="font-size:11px; font-weight:700; color:${r.grade_color}; margin-top:6px;">${r.grade_label}</div>
+    <div style="font-size:10px; font-weight:700; color:${ratioColor}; margin-top:6px; line-height:1.3;">${r.intent_comments} 則<br>關鍵字留言</div>
   </div>
 
-  <!-- 右邊：內容 -->
   <div style="flex:1; min-width:0;">
-    <!-- 第一行：內容類型 + 標題 -->
-    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-      <span style="background:${contentTypeBg[r.content_type]}; color:${contentTypeColor[r.content_type]}; font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">${contentTypeLabel[r.content_type] || r.content_type}</span>
-      <span style="font-size:13px; font-weight:600; color:#222; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;">${escapeHtml(r.caption || '（無文案）')}</span>
+    <div style="font-size:13px; font-weight:600; color:#222; margin-bottom:10px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${escapeHtml(r.caption || '（無文案）')}</div>
+
+    <div style="display:flex; gap:12px; font-size:12px; color:#666; flex-wrap:wrap; margin-bottom:10px;">
+      <span>▷ <b>${fmtNum(r.plays)}</b> 播放</span>
+      <span>👁 <b>${fmtNum(r.reach)}</b> 觸及</span>
+      <span>⏱ <b>${r.avg_watch_sec}秒</b> 觀看</span>
+      <span>💬 <b style="color:${r.intent_comments > 0 ? '#e85d04' : '#999'}">${r.intent_comments}</b> 意圖 / ${r.total_comments} 則留言</span>
+      <span>🔖 <b>${fmtNum(r.saved)}</b> 儲存</span>
+      <span>📤 <b>${fmtNum(r.shares)}</b> 分享</span>
     </div>
 
-    <!-- 指標列 -->
-    <div style="display:flex; gap:16px; font-size:12px; color:#666; flex-wrap:wrap; margin-bottom:10px;">
-      <span>▷ ${fmtNum(r.plays)} 播放</span>
-      <span>🔖 儲存率 <b style="color:${r.save_rate >= 2 ? '#2d6a4f' : r.save_rate >= 0.5 ? '#b5851a' : '#c62828'}">${r.save_rate}%</b></span>
-      <span>⏱ 平均觀看 <b>${r.avg_watch_sec}秒</b></span>
-      <span>👁 觸及 ${fmtNum(r.reach)}</span>
-      <span>💬 <b style="color:${r.intent_comments > 0 ? '#e85d04' : '#999'}">${r.intent_comments} 則購買意圖留言</b>／共 ${r.total_comments} 則</span>
-    </div>
-
-    <!-- 廣告標籤 -->
+    <!-- 廣告推薦 -->
     <div style="margin-bottom:8px;">
+      <span style="background:${adRec.color}18; color:${adRec.color}; border:1.5px solid ${adRec.color}44; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
+        <i class="ph ph-arrow-right" style="font-size:13px;"></i>
+        建議投：${adRec.label}
+        <span style="font-weight:400; font-size:11px; opacity:0.8;">— ${adRec.sub}</span>
+      </span>
+    </div>
+
+    <div style="margin-bottom:10px;">
       ${r.ad_data ? `
       <span style="background:#F97316; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:4px;">
         <i class="ph ph-megaphone" style="font-size:12px;"></i>
@@ -1165,42 +1421,21 @@ async function loadOrganicReels() {
       `}
     </div>
 
-    <!-- 分數說明列（小字） -->
-    <div style="font-size:11px; color:#aaa; margin-bottom:10px;">
-      ${r.ad_data
-        ? `評分依據（廣告實績）：基礎 ${r.score_breakdown?.ad_base ?? 60}分 ＋ 每私訊成本加分 ${r.score_breakdown?.ad_cpp_bonus ?? '-'}分 ＋ 私訊量加分 ${r.score_breakdown?.ad_msg_bonus ?? 0}分`
-        : `評分依據（有機）：留言意圖 ${r.score_breakdown?.intent ?? '-'}分 ＋ 儲存 ${r.score_breakdown?.save ?? '-'}分 ＋ 觀看 ${r.score_breakdown?.watch ?? '-'}分 ＋ 播放 ${r.score_breakdown?.plays ?? '-'}分`
-      }
-    </div>
-
-    <!-- 廣告建議（只有 grade_show_ad === true 才顯示） -->
-    ${r.grade_show_ad ? `
-    <div style="background:#fff8f0; border:1px solid #ffd699; border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
-      <span style="background:${adTypeBadge[r.ad_type_recommendation]}; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:4px; white-space:nowrap;">建議投：${adTypeLabel[r.ad_type_recommendation] || r.ad_type_recommendation}</span>
-      <span style="font-size:12px; color:#555;">${escapeHtml(r.recommendation_reason || '')}</span>
-    </div>
-    ` : `
-    <div style="background:#f5f5f5; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#999; font-size:12px;">
-      ❌ 這支建議不投廣告，先優化有機成效再考慮
-    </div>
-    `}
-
-    <!-- 查看貼文 -->
-    <div style="margin-top:10px;">
-      <a href="${r.permalink}" target="_blank" style="font-size:12px; color:#e85d04; text-decoration:none; font-weight:600;">查看貼文 →</a>
-    </div>
+    <a href="${r.permalink}" target="_blank" style="font-size:12px; color:#e85d04; text-decoration:none; font-weight:600;">查看貼文 →</a>
   </div>
 </div>`;
     }).join('');
-    toast('載入 ' + reels.length + ' 支 Reels，已排序推薦', 'success');
+    // 同步到投廣室下拉選單
+    populatePlanReelSelect(reels);
+    toast('找到 ' + reels.length + ' 支高意圖影片', 'success');
   } catch(err) {
     list.innerHTML = '<div class="empty-state"><i class="ph ph-warning"></i><p>載入失敗：' + escapeHtml(err.message) + '</p></div>';
     toast('載入失敗：' + err.message, 'error');
   } finally { btn.disabled = false; }
 }
 
-loadKPISettings();
-renderActionLog();
+
+
 loadData();
 startCountdown();
 </script>
