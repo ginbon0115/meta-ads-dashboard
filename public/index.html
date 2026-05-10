@@ -1092,7 +1092,7 @@ function generatePlan() {
     reach: `
       <div style="${audienceRowStyle}">
         <span style="${audienceTagStyle}"><i class="ph ph-users-three"></i> 類似廣告受眾（Lookalike） 1%</span>
-        <span style="${audienceTagStyle}"><i class="ph ph-instagram-logo"></i> 來源：與你 IG 互動過的用戶（過去 365 天）</span>
+        <span style="${audienceTagStyle}"><i class="ph ph-storefront"></i> 來源：1shop購買者名單</span>
       </div>
       <div style="${audienceRowStyle}">
         <span style="${audienceTagStyle}"><i class="ph ph-calendar-blank"></i> 年齡：25–44</span>
@@ -1106,14 +1106,14 @@ function generatePlan() {
         <span style="${audienceTagStyle}"><i class="ph ph-video"></i> 自訂廣告受眾（Custom Audience）：影片觀看 25% 以上（過去 180 天）</span>
       </div>
       <div style="${audienceRowStyle}">
-        <span style="background:#FFF1F2; border:1px solid #FECDD3; color:#BE123C; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px; margin:3px 3px 3px 0;"><i class="ph ph-prohibit"></i> 排除：已加入 LINE 群（如有上傳名單）</span>
+        <span style="background:#FFF1F2; border:1px solid #FECDD3; color:#BE123C; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px; margin:3px 3px 3px 0;"><i class="ph ph-prohibit"></i> 排除：1shop購買者名單（避免重複觸及）</span>
       </div>`,
     conversion: `
       <div style="${audienceRowStyle}">
-        <span style="${audienceTagStyle}"><i class="ph ph-upload-simple"></i> 自訂廣告受眾（Custom Audience）：LINE 群成員名單（上傳 CSV）</span>
+        <span style="${audienceTagStyle}"><i class="ph ph-storefront"></i> 自訂廣告受眾（Custom Audience）：1shop購買者名單（1,274 人）</span>
       </div>
       <div style="${audienceRowStyle}">
-        <span style="${audienceTagStyle}"><i class="ph ph-users-three"></i> 類似廣告受眾（Lookalike） 1%：以購買者名單建立</span>
+        <span style="${audienceTagStyle}"><i class="ph ph-users-three"></i> 類似廣告受眾（Lookalike） 1%：來源 1shop購買者名單</span>
       </div>
       <div style="${audienceRowStyle}">
         <span style="${audienceTagStyle}"><i class="ph ph-shopping-cart"></i> 轉換事件：購買（Purchase）</span>
@@ -1190,9 +1190,9 @@ function copyPlanSummary() {
     conversion: '銷售（Sales）'
   };
   const audienceSummary = {
-    reach: '類似廣告受眾（Lookalike）1%・來源：IG 互動用戶（365天）・年齡 25–44・地區：台灣',
-    engagement: '自訂受眾：IG 互動（365天）+ 影片觀看 25%（180天）・排除已入群名單',
-    conversion: '自訂受眾：LINE 群 CSV + 類似受眾 1%（購買者）・轉換事件：Purchase'
+    reach: '類似廣告受眾（Lookalike）1%・來源：1shop購買者名單・年齡 25–44・地區：台灣',
+    engagement: '自訂受眾：IG 互動（365天）+ 影片觀看 25%（180天）・排除 1shop購買者名單',
+    conversion: '自訂受眾：1shop購買者名單（1,274人）+ Lookalike 1%・轉換事件：Purchase'
   };
 
   const caption = reel ? escapeHtml((reel.caption || '').substring(0, 60)) + '...' : '（未選定影片）';
