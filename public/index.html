@@ -1157,22 +1157,78 @@ function generatePlan() {
       <div style="font-size:11px; font-weight:700; color:var(--text-2); margin-bottom:6px; text-transform:uppercase;">文案建議</div>
       <div style="font-size:13px; color:var(--text); line-height:1.6;">${copyMap[adType]}</div>
     </div>
-    <div style="display:flex; gap:12px; margin-top:16px;">
-      <a href="https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=893698616001048"
-         target="_blank"
-         style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; background:#1877F2; color:#fff; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; text-decoration:none;">
-        <i class="ph ph-arrow-square-out"></i> 前往 Meta 廣告管理員
+    <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
+      <button onclick="createAdDraft()" id="createDraftBtn" style="flex:1; min-width:200px; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer;">
+        <i class="ph ph-rocket-launch"></i> 一鍵建立廣告草稿
+      </button>
+      <a href="https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=255960679" target="_blank"
+         style="display:flex; align-items:center; justify-content:center; gap:8px; background:#1877F2; color:#fff; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; text-decoration:none;">
+        <i class="ph ph-arrow-square-out"></i> Meta 後台
       </a>
       <button onclick="copyPlanSummary()" style="background:var(--accent-light); border:1px solid var(--border); color:var(--accent); border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:8px;">
-        <i class="ph ph-copy"></i> 複製設定摘要
+        <i class="ph ph-copy"></i> 複製摘要
       </button>
     </div>
+    <div id="draftResult" style="display:none; margin-top:12px;"></div>
   `;
 
   const output = document.getElementById('planOutput');
   output.style.display = 'block';
   output.innerHTML = html;
   toast('投廣計畫產生完成', 'success');
+}
+
+async function createAdDraft() {
+  const sel = document.getElementById('planReelSelect');
+  const opt = sel?.options[sel.selectedIndex];
+  if (!opt || !opt.dataset.reel) { toast('請先選擇影片', 'error'); return; }
+  const reel = JSON.parse(opt.dataset.reel);
+  const adType = document.querySelector('input[name="planAdType"]:checked')?.value || 'engagement';
+  const budget = parseInt(document.getElementById('planBudget').value) || 300;
+  const days = adType === 'reach' ? 7 : adType === 'engagement' ? 5 : 3;
+
+  const btn = document.getElementById('createDraftBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ph ph-circle-notch" style="animation:spin 1s linear infinite"></i> 建立中...';
+
+  try {
+    const res = await fetch('/api/create-ad-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reel_id: reel.id,
+        reel_permalink: reel.permalink,
+        ad_type: adType,
+        budget,
+        days,
+        caption: reel.caption || ''
+      })
+    });
+    const data = await res.json();
+    const resultDiv = document.getElementById('draftResult');
+    resultDiv.style.display = 'block';
+    if (data.success) {
+      resultDiv.innerHTML = `
+        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#16a34a;">✅ 草稿建立成功！</div>
+            <div style="font-size:12px; color:#166534; margin-top:3px;">Campaign ID: ${data.campaign_id}</div>
+          </div>
+          <a href="${data.manager_url}" target="_blank" style="background:#1877F2; color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:6px;">
+            <i class="ph ph-arrow-square-out"></i> 前往發布
+          </a>
+        </div>`;
+      toast('廣告草稿建立成功！', 'success');
+    } else {
+      resultDiv.innerHTML = `<div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:10px; padding:14px; color:#dc2626; font-size:13px;">❌ 建立失敗（${data.step}）：${data.error}</div>`;
+      toast('建立失敗，查看錯誤訊息', 'error');
+    }
+  } catch(e) {
+    toast('網路錯誤：' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ph ph-rocket-launch"></i> 一鍵建立廣告草稿';
+  }
 }
 
 function copyPlanSummary() {
