@@ -471,8 +471,7 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
           廣告監控 + 停投決策
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:12px; color:var(--text-2); font-weight:600;">每私訊目標 NT$</span>
-          <input type="number" id="targetCPMsg" value="15" style="width:70px; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:var(--text); outline:none; font-weight:700;">
+          <span id="monitorBenchmarkLabel" style="font-size:12px; color:var(--text-2);"></span>
           <button onclick="loadMonitor()" style="background:var(--accent-light); border:1px solid var(--border); color:var(--accent); border-radius:8px; padding:7px 14px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:6px;">
             <i class="ph ph-arrows-clockwise"></i> 載入
           </button>
@@ -1076,12 +1075,24 @@ function copyPlanSummary() {
 
 async function loadMonitor() {
   const list = document.getElementById('monitorList');
-  const target = parseFloat(document.getElementById('targetCPMsg').value) || 15;
   list.innerHTML = '<div class="empty-state"><i class="ph ph-circle-notch" style="animation:spin 1s linear infinite;font-size:24px;color:var(--accent);display:block;margin-bottom:8px;"></i><p>載入中…</p></div>';
   try {
     const res = await fetch('/api/campaigns');
     const json = await res.json();
-    const active = (json.data || []).filter(c => c.status === 'ACTIVE' && c.spend > 0);
+    const all = json.data || [];
+    const active = all.filter(c => c.status === 'ACTIVE' && c.spend > 0);
+
+    // 用所有有私訊數據的活動算真實平均，作為基準
+    const withMsg = all.filter(c => c.cost_per_message !== null && c.cost_per_message > 0);
+    const target = withMsg.length > 0
+      ? withMsg.reduce((s, c) => s + c.cost_per_message, 0) / withMsg.length
+      : null;
+    const benchmarkEl = document.getElementById('monitorBenchmarkLabel');
+    if (target !== null) {
+      benchmarkEl.innerHTML = `基準：你的廣告平均每私訊 <b>NT$${target.toFixed(0)}</b>（${withMsg.length} 支活動）`;
+    } else {
+      benchmarkEl.textContent = '尚無私訊數據可計算基準';
+    }
     if (!active.length) {
       list.innerHTML = '<div class="empty-state"><i class="ph ph-check-circle"></i><p>目前沒有執行中的廣告</p></div>';
       return;
@@ -1094,7 +1105,7 @@ async function loadMonitor() {
 
       // 收集問題原因
       const issues = [];
-      if (cpp !== null && cpp > target * 1.5) issues.push(`每私訊 NT$${cpp.toFixed(0)} 超標 → 換素材或受眾`);
+      if (target !== null && cpp !== null && cpp > target * 1.5) issues.push(`每私訊 NT$${cpp.toFixed(0)}，比你的平均高 ${Math.round((cpp/target-1)*100)}% → 換素材或受眾`);
       if (ctr !== null && ctr < 1) issues.push(`點擊率 ${ctr.toFixed(1)}% 偏低 → Reel 前 3 秒可能沒 hook`);
       if (cpm !== null && cpm > 300) issues.push(`CPM NT$${cpm.toFixed(0)} 偏高 → 受眾太小或競爭太激烈`);
       if (reach > 0 && reach < 500) issues.push(`觸及 ${reach.toLocaleString()} 人偏少 → 考慮提高預算`);
@@ -1103,12 +1114,14 @@ async function loadMonitor() {
       let decision, dColor, dBg;
       if (cpp === null && ctr === null) {
         decision = '數據累積中'; dColor = '#888'; dBg = '#f5f5f5';
-      } else if (issues.length === 0 && cpp !== null && cpp <= target) {
+      } else if (target !== null && issues.length === 0 && cpp !== null && cpp <= target) {
         decision = '🟢 繼續投'; dColor = '#16a34a'; dBg = '#f0fdf4';
-      } else if (cpp !== null && cpp <= target * 1.5 && issues.length <= 1) {
+      } else if (target !== null && cpp !== null && cpp <= target * 1.5 && issues.length <= 1) {
         decision = '🟡 觀察'; dColor = '#d97706'; dBg = '#fffbeb';
-      } else {
+      } else if (issues.length > 0) {
         decision = '🔴 建議停投'; dColor = '#dc2626'; dBg = '#fef2f2';
+      } else {
+        decision = '數據累積中'; dColor = '#888'; dBg = '#f5f5f5';
       }
 
       const statsHtml = [
