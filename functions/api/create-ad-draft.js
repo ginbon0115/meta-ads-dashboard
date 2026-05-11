@@ -68,7 +68,7 @@ export async function onRequestPost(context) {
       name: campaignName,
       objective: "OUTCOME_ENGAGEMENT",
       status: "PAUSED",
-      special_ad_categories: JSON.stringify(["TAIWAN_UNIVERSAL"]),
+      special_ad_categories: JSON.stringify(["NONE"]),
       is_adset_budget_sharing_enabled: "false",
       access_token: TOKEN,
     });
