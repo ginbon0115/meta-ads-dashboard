@@ -57,6 +57,19 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
+/* 一句話總結 */
+.summary-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px; margin-bottom: 20px; font-size: 14px; color: var(--text); line-height: 1.6; display: none; }
+.summary-banner.loaded { display: block; }
+.summary-banner strong { color: var(--accent); }
+
+/* 指標燈號 */
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+.dot-green { background: #22c55e; }
+.dot-yellow { background: #f59e0b; }
+.dot-red { background: #ef4444; }
+.dot-grey { background: #9ca3af; }
+.metric-hint { font-size: 10px; color: var(--text-2); margin-left: 3px; }
+
 /* SUMMARY KPI GRID */
 .summary-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
 @media (max-width: 900px) { .summary-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -341,25 +354,27 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
       <option value="this_month">本月</option>
     </select>
   </div>
+  <div class="summary-banner" id="summaryBanner"></div>
+
   <div class="summary-kpi-grid">
     <div class="kpi-card">
       <div class="kpi-icon"><i class="ph ph-currency-circle-dollar"></i></div>
-      <div class="kpi-label">總花費</div>
+      <div class="kpi-label">這個月花了多少</div>
       <div class="kpi-value skeleton" id="kpiSpend"></div>
     </div>
     <div class="kpi-card kpi-blue">
       <div class="kpi-icon blue"><i class="ph ph-chat-circle-dots"></i></div>
-      <div class="kpi-label">平均每則成本</div>
+      <div class="kpi-label">拉一個人私訊要多少錢</div>
       <div class="kpi-value skeleton" id="kpiCPM"></div>
     </div>
     <div class="kpi-card kpi-purple">
       <div class="kpi-icon purple"><i class="ph ph-trend-up"></i></div>
-      <div class="kpi-label">最高 ROAS</div>
+      <div class="kpi-label">廣告投資報酬（ROAS）</div>
       <div class="kpi-value skeleton" id="kpiROAS"></div>
     </div>
     <div class="kpi-card kpi-green">
       <div class="kpi-icon green"><i class="ph ph-play-circle"></i></div>
-      <div class="kpi-label">執行中活動</div>
+      <div class="kpi-label">現在幾支廣告在跑</div>
       <div class="kpi-value skeleton" id="kpiActive"></div>
     </div>
   </div>
@@ -597,10 +612,29 @@ function updateSummaryKPIs(data) {
     }
   };
 
-  set('kpiSpend', fmtNTD(totalSpend), '過去 30 天');
-  set('kpiCPM', avgCostPerMsg !== null ? fmtNTD(avgCostPerMsg) : '—', avgCostPerMsg !== null ? '全活動平均每則成本' : '暫無留言廣告數據');
-  set('kpiROAS', bestROAS ? fmtROAS(bestROAS) : '—', bestROAS ? '最高單活動 ROAS' : '暫無轉換廣告數據');
-  set('kpiActive', activeCount.toString(), '個活動執行中');
+  // 一句話總結
+  const banner = document.getElementById('summaryBanner');
+  if (totalSpend > 0 && totalMsg > 0) {
+    const costLabel = avgCostPerMsg < 10 ? '非常划算' : avgCostPerMsg < 15 ? '表現良好' : '需要優化';
+    const dotColor = avgCostPerMsg < 10 ? 'dot-green' : avgCostPerMsg < 15 ? 'dot-yellow' : 'dot-red';
+    banner.innerHTML = `這個時段共花了 <strong>${fmtNTD(totalSpend)}</strong>，換來 <strong>${fmtNum(totalMsg)} 個人</strong>來私訊，平均每人花 <strong>${fmtNTD(avgCostPerMsg)}</strong>。<span class="dot ${dotColor}" style="margin-left:6px;"></span><span style="font-size:12px;color:var(--text-2);">${costLabel}</span>`;
+    banner.classList.add('loaded');
+  } else if (totalSpend > 0) {
+    banner.innerHTML = `這個時段共花了 <strong>${fmtNTD(totalSpend)}</strong>，目前尚未有私訊數據回傳。`;
+    banner.classList.add('loaded');
+  }
+
+  const msgSub = avgCostPerMsg !== null
+    ? (avgCostPerMsg < 10 ? '非常划算' : avgCostPerMsg < 15 ? '表現良好，繼續跑' : '偏高，考慮換素材')
+    : '尚無私訊廣告數據';
+  const roasSub = bestROAS
+    ? (bestROAS >= 3 ? '優秀，花1元賺超過3元' : bestROAS >= 2 ? '良好，花1元賺超過2元' : '偏低，需要優化')
+    : '尚未追蹤到購買數據';
+
+  set('kpiSpend', fmtNTD(totalSpend), '廣告花費總計');
+  set('kpiCPM', avgCostPerMsg !== null ? fmtNTD(avgCostPerMsg) : '—', msgSub);
+  set('kpiROAS', bestROAS ? fmtROAS(bestROAS) : '—', roasSub);
+  set('kpiActive', activeCount.toString(), '支廣告執行中');
 }
 
 // 產生 table rows，有花費的先顯示，無花費的折疊
@@ -661,9 +695,24 @@ function renderCampaignSections(data) {
   const noSpend   = sorted.filter(c => c.status !== 'ACTIVE' && c.spend === 0);
 
   const rowFn = c => {
-    const cpmStr = c.cpm !== null ? fmtNTD(c.cpm) : '<span class="num-muted">—</span>';
-    const ctrStr = c.ctr !== null ? `${c.ctr.toFixed(2)}%` : '<span class="num-muted">—</span>';
-    const roasStr = c.roas !== null ? `<span class="${roasClass(c.roas)}">${fmtROAS(c.roas)}</span>` : '<span class="num-muted">—</span>';
+    // CPM 燈號：< NT$150 綠，$150-300 黃，> $300 紅
+    const cpmDot = c.cpm === null ? 'dot-grey' : c.cpm < 150 ? 'dot-green' : c.cpm < 300 ? 'dot-yellow' : 'dot-red';
+    const cpmStr = c.cpm !== null
+      ? `<span class="dot ${cpmDot}"></span>${fmtNTD(c.cpm)}`
+      : '<span class="num-muted">—</span>';
+
+    // CTR 燈號：> 3% 綠，1-3% 黃，< 1% 紅
+    const ctrDot = c.ctr === null ? 'dot-grey' : c.ctr > 3 ? 'dot-green' : c.ctr >= 1 ? 'dot-yellow' : 'dot-red';
+    const ctrStr = c.ctr !== null
+      ? `<span class="dot ${ctrDot}"></span>${c.ctr.toFixed(2)}%`
+      : '<span class="num-muted">—</span>';
+
+    // ROAS 燈號：≥ 3 綠，2-3 黃，< 2 紅，null 灰＋說明
+    const roasDot = c.roas === null ? 'dot-grey' : c.roas >= 3 ? 'dot-green' : c.roas >= 2 ? 'dot-yellow' : 'dot-red';
+    const roasStr = c.roas !== null
+      ? `<span class="dot ${roasDot}"></span><span class="${roasClass(c.roas)}">${fmtROAS(c.roas)}</span>`
+      : '<span class="num-muted">—</span><span class="metric-hint">尚未追蹤到購買</span>';
+
     return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
       <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
       <td>${statusBadge(c.status)}</td>
@@ -696,7 +745,14 @@ function renderCampaignSections(data) {
         <div class="table-scroll">
           <table>
             <thead>
-              <tr><th>活動名稱</th><th>狀態</th><th>花費</th><th>CPM</th><th>CTR</th><th>ROAS</th></tr>
+              <tr>
+                <th>活動名稱</th>
+                <th>狀態</th>
+                <th>花費</th>
+                <th>每千人看到費用<span class="metric-hint">CPM，越低越省</span></th>
+                <th>點擊率<span class="metric-hint">CTR，越高越吸引人</span></th>
+                <th>投資報酬<span class="metric-hint">ROAS，花1元賺幾元</span></th>
+              </tr>
             </thead>
             <tbody>${tbodyHtml}</tbody>
           </table>
