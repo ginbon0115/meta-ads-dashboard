@@ -2,7 +2,6 @@ export async function onRequestPost(context) {
   const { env, request } = context;
   const TOKEN = env.META_ACCESS_TOKEN;
   const ACCOUNT = "act_893698616001048";
-  const IG_ACTOR_ID = "17841453561052646";
   const PAGE_ID = "248488591682054";
 
   // Audience IDs（2026-05-11 更新，全部有效）
@@ -44,24 +43,6 @@ export async function onRequestPost(context) {
   const shortCaption = (caption || "").substring(0, 20).trim();
   const campaignName = `【草稿】${shortCaption} - ${ad_type} - ${dateStr}`;
 
-  // Objective mapping
-  // 全部用 OUTCOME_ENGAGEMENT，才能複製 template adset（120239729095080375 是 ENGAGEMENT）
-  // reach/conversion 只是受眾策略不同，objective 一致才不會 Objective Mismatch
-  const objectiveMap = {
-    reach: "OUTCOME_ENGAGEMENT",
-    engagement: "OUTCOME_ENGAGEMENT",
-    conversion: "OUTCOME_ENGAGEMENT",
-  };
-
-  // Optimization goal mapping
-  // engagement 用 POST_ENGAGEMENT（與 template adset 120239729095080375 一致，
-  // 避免 copy 後 update 時 attribution_spec 衝突）
-  const optimizationMap = {
-    reach: "POST_ENGAGEMENT",
-    engagement: "POST_ENGAGEMENT",
-    conversion: "POST_ENGAGEMENT",
-  };
-
   // Audience targeting by ad type
   const targetingMap = {
     reach: {
@@ -85,7 +66,7 @@ export async function onRequestPost(context) {
   try {
     const campaignBody = new URLSearchParams({
       name: campaignName,
-      objective: objectiveMap[ad_type] || "OUTCOME_ENGAGEMENT",
+      objective: "OUTCOME_ENGAGEMENT",
       status: "PAUSED",
       special_ad_categories: JSON.stringify([]),
       is_adset_budget_sharing_enabled: "false",
@@ -112,10 +93,9 @@ export async function onRequestPost(context) {
     );
   }
 
-  // ── Step 2: Ad Set（複製 template adset，繞過台灣廣告主驗證）────────────────
-  // Template adset 120243110991180375：（4/21）淨淨&荷康 campaign 底下的組合
-  // optimization_goal=CONVERSATIONS, destination_type=MESSAGING_INSTAGRAM_DIRECT_MESSENGER
-  // 女性25-48，台灣，購物行為+媽媽受眾，7天歸因 → 小赫成效最好的公式
+  // ── Step 2: Ad Set ────────────────────────────────────────────────────────
+  // 先嘗試複製 template（120243110991180375，淨淨&荷康，繞過台灣廣告主驗證）
+  // 複製失敗時直接建立，optimization_goal=CONVERSATIONS + IG Direct
   const TEMPLATE_ADSET_ID = "120243110991180375";
 
   let adsetId;
