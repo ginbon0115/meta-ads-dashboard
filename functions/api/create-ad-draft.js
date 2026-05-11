@@ -69,6 +69,7 @@ export async function onRequestPost(context) {
       objective: "OUTCOME_ENGAGEMENT",
       status: "PAUSED",
       special_ad_categories: JSON.stringify(["NONE"]),
+      geo_regulated_categories: JSON.stringify(["TAIWAN_UNIVERSAL"]),
       is_adset_budget_sharing_enabled: "false",
       access_token: TOKEN,
     });
@@ -132,6 +133,7 @@ export async function onRequestPost(context) {
         daily_budget: budget * 100,
         targeting: JSON.stringify(targeting),
         attribution_spec: JSON.stringify([{ event_type: "CLICK_THROUGH", window_days: 1 }]),
+        geo_regulated_categories: JSON.stringify(["TAIWAN_UNIVERSAL"]),
         access_token: TOKEN,
       });
       const updateRes = await fetch(
