@@ -31,13 +31,39 @@ export async function onRequestGet(context) {
     }
 
     // 1. 取 IG 帳號 ID
-    const pagesRes = await fetch(`https://graph.facebook.com/v25.0/me/accounts?fields=id,name,instagram_business_account{id,name,username}&access_token=${token}`);
-    const pagesData = await pagesRes.json();
+    // System User Token 只有 ads_management 權限，/me/accounts 回傳空陣列
+    // 需要 instagram_basic + pages_read_engagement 才能讀 IG
+    // 暫時 hardcode IG ID，先測試 token 是否有 IG 讀取能力
+    const IG_ID_HARDCODED = env.IG_ACCOUNT_ID || '17841453561052646';
+    const IG_USERNAME_HARDCODED = 'hehehaxi0115';
+
+    // 先嘗試用 /me/accounts 動態取得（有正確權限時會成功）
     let igId = null, igUsername = null;
-    for (const p of (pagesData.data || [])) {
-      if (p.instagram_business_account) { igId = p.instagram_business_account.id; igUsername = p.instagram_business_account.username; break; }
+    try {
+      const pagesRes = await fetch(`https://graph.facebook.com/v25.0/me/accounts?fields=id,name,instagram_business_account{id,name,username}&access_token=${token}`);
+      const pagesData = await pagesRes.json();
+      for (const p of (pagesData.data || [])) {
+        if (p.instagram_business_account) { igId = p.instagram_business_account.id; igUsername = p.instagram_business_account.username; break; }
+      }
+    } catch (_) {}
+
+    // fallback：hardcode
+    if (!igId) { igId = IG_ID_HARDCODED; igUsername = IG_USERNAME_HARDCODED; }
+
+    // 先測試這個 token 是否真的能讀 IG media
+    const igTestRes = await fetch(`https://graph.facebook.com/v25.0/${igId}?fields=id,username,media_count&access_token=${token}`);
+    const igTestData = await igTestRes.json();
+    if (igTestData.error) {
+      // Token 沒有 IG 讀取權限，回傳明確說明
+      return new Response(JSON.stringify({
+        error: 'token_missing_ig_permission',
+        message: 'Token 缺少 instagram_basic 權限，無法讀取 IG 資料。請到 Meta Business Suite 幫 System User 加上 instagram_basic、instagram_manage_insights、pages_read_engagement 權限後重新產生 Token。',
+        token_scopes: ['ads_management', 'public_profile'],
+        required_scopes: ['instagram_basic', 'instagram_manage_insights', 'pages_read_engagement', 'pages_show_list'],
+        ig_id_attempted: igId,
+        api_error: igTestData.error
+      }), { status: 403, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
     }
-    if (!igId) { igId = '17841453561052646'; igUsername = 'hehehaxi0115'; }
 
     // 2. 翻完所有公開貼文
     let allMedia = [];
