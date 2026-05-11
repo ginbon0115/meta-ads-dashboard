@@ -239,19 +239,19 @@ export async function onRequestPost(context) {
         const fallback3Data = await fallback3Res.json();
 
         if (fallback3Data.error) {
-          const errDetail = JSON.stringify({
-            try1: creativeData.error,
-            try2: fallbackData.error,
-            try3: fallback3Data.error,
-          });
+          // Creative 失敗（常見原因：App 開發模式）→ 回傳 partial success
+          // Campaign + Adset 已建立，讓使用者去 Ads Manager 手動選素材發布
+          const managerUrl = `https://adsmanager.facebook.com/adsmanager/manage/adsets?act=893698616001048&selected_campaign_ids=${campaignId}`;
           return new Response(
             JSON.stringify({
-              success: false,
-              error: fallback3Data.error.error_user_msg || fallback3Data.error.message,
-              error_detail: errDetail,
-              step: "creative",
+              success: true,
+              partial: true,
+              campaign_id: campaignId,
+              adset_id: adsetId,
+              manager_url: managerUrl,
+              note: "Campaign 和廣告組合已建立完成。請到 Meta 後台選擇 Reel 素材並按發布。",
             }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: { "Content-Type": "application/json" } }
           );
         }
         creativeId = fallback3Data.id;

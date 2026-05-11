@@ -1209,20 +1209,32 @@ async function createAdDraft() {
     resultDiv.style.display = 'block';
     if (data.success) {
       const campaignId = data.campaign_id || '';
-      const managerUrl = campaignId
-        ? `https://adsmanager.facebook.com/adsmanager/manage/ads?act=893698616001048&selected_campaign_ids=${campaignId}`
-        : `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=893698616001048`;
-      resultDiv.innerHTML = `
-        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <div>
-            <div style="font-size:13px; font-weight:700; color:#16a34a;">✅ 草稿已建立！正在開啟 Meta 後台...</div>
-            <div style="font-size:12px; color:#166534; margin-top:3px;">Campaign ID: ${campaignId}</div>
-          </div>
-          <a href="${managerUrl}" target="_blank" id="goToManagerBtn" style="background:#1877F2; color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:6px;">
-            <i class="ph ph-arrow-square-out"></i> 前往發布
-          </a>
-        </div>`;
-      toast('✅ 草稿已建立！正在開啟 Meta 後台...', 'success');
+      const managerUrl = data.manager_url || (campaignId
+        ? `https://adsmanager.facebook.com/adsmanager/manage/adsets?act=893698616001048&selected_campaign_ids=${campaignId}`
+        : `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=893698616001048`);
+      if (data.partial) {
+        resultDiv.innerHTML = `
+          <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:10px; padding:14px 16px;">
+            <div style="font-size:13px; font-weight:700; color:#92400e; margin-bottom:6px;">🟡 Campaign + 廣告組合已建立</div>
+            <div style="font-size:12px; color:#78350f; margin-bottom:10px;">進入 Meta 後台，點「建立廣告」→ 選你的 Reel → 按發布，就完成了。</div>
+            <a href="${managerUrl}" target="_blank" style="background:#1877F2; color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              <i class="ph ph-arrow-square-out"></i> 去 Meta 後台選素材
+            </a>
+          </div>`;
+        toast('🟡 Campaign 建立完成，請去 Meta 後台加素材', 'info');
+      } else {
+        resultDiv.innerHTML = `
+          <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="font-size:13px; font-weight:700; color:#16a34a;">✅ 草稿已建立！正在開啟 Meta 後台...</div>
+              <div style="font-size:12px; color:#166534; margin-top:3px;">Campaign ID: ${campaignId}</div>
+            </div>
+            <a href="${managerUrl}" target="_blank" id="goToManagerBtn" style="background:#1877F2; color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:6px;">
+              <i class="ph ph-arrow-square-out"></i> 前往發布
+            </a>
+          </div>`;
+        toast('✅ 草稿已建立！正在開啟 Meta 後台...', 'success');
+      }
       // 1 秒後自動開新分頁跳轉到 Meta 廣告管理員
       setTimeout(() => {
         window.open(managerUrl, '_blank');
