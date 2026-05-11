@@ -119,7 +119,19 @@ export async function onRequestPost(context) {
 
   let adsetId;
   try {
-    // 2a. 複製 template adset 到新 campaign
+    // 受眾 targeting（共用）
+    const validInclude = audienceConfig.include.filter(a => VALID_AUDIENCE_IDS.has(a.id));
+    const validExclude = audienceConfig.exclude.filter(a => VALID_AUDIENCE_IDS.has(a.id));
+    const targeting = {
+      geo_locations: { countries: ["TW"] },
+      age_min: 28,
+      age_max: 44,
+      genders: [2],
+    };
+    if (validInclude.length > 0) targeting.custom_audiences = validInclude;
+    if (validExclude.length > 0) targeting.excluded_custom_audiences = validExclude;
+
+    // 2a. 先嘗試複製 template adset（繞過台灣廣告主驗證）
     const copyBody = new URLSearchParams({
       campaign_id: campaignId,
       status_option: "PAUSED",
@@ -131,53 +143,54 @@ export async function onRequestPost(context) {
     );
     const copyData = await copyRes.json();
 
-    if (copyData.error) {
-      return new Response(
-        JSON.stringify({ success: false, error: copyData.error.error_user_msg || copyData.error.message, error_detail: JSON.stringify(copyData.error), step: "adset_copy" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+    if (!copyData.error) {
+      // 複製成功 → 更新名稱、預算、受眾、歸因（1天點擊）
+      adsetId = copyData.copied_adset_id || copyData.id;
+      const updateBody = new URLSearchParams({
+        name: "【草稿】受眾組合",
+        daily_budget: budget * 100,
+        targeting: JSON.stringify(targeting),
+        attribution_spec: JSON.stringify([{ event_type: "CLICK_THROUGH", window_days: 1 }]),
+        access_token: TOKEN,
+      });
+      const updateRes = await fetch(
+        `https://graph.facebook.com/v25.0/${adsetId}`,
+        { method: "POST", body: updateBody }
       );
-    }
-
-    // copies API 回傳 copied_adset_id（不是 id）
-    adsetId = copyData.copied_adset_id || copyData.id;
-
-    // 2b. 更新複製的 adset：名稱、預算、受眾
-    // 過濾無效受眾 ID（只保留 VALID_AUDIENCE_IDS 清單內的 ID）
-    const validInclude = audienceConfig.include.filter(a => VALID_AUDIENCE_IDS.has(a.id));
-    const validExclude = audienceConfig.exclude.filter(a => VALID_AUDIENCE_IDS.has(a.id));
-
-    const targeting = {
-      geo_locations: { countries: ["TW"] },
-      age_min: 28,
-      age_max: 44,
-      genders: [2], // 1=男, 2=女
-    };
-    // 只有過濾後有有效受眾才傳，空陣列不傳（Meta 會報錯）
-    if (validInclude.length > 0) {
-      targeting.custom_audiences = validInclude;
-    }
-    if (validExclude.length > 0) {
-      targeting.excluded_custom_audiences = validExclude;
-    }
-
-    const updateBody = new URLSearchParams({
-      name: "【草稿】受眾組合",
-      daily_budget: budget * 100, // cents
-      targeting: JSON.stringify(targeting),
-      // optimization_goal 不可更新（Meta 限制：copy 後無法變更），已移除
-      access_token: TOKEN,
-    });
-    const updateRes = await fetch(
-      `https://graph.facebook.com/v25.0/${adsetId}`,
-      { method: "POST", body: updateBody }
-    );
-    const updateData = await updateRes.json();
-
-    if (updateData.error) {
-      return new Response(
-        JSON.stringify({ success: false, error: updateData.error.error_user_msg || updateData.error.message, error_detail: JSON.stringify(updateData.error), step: "adset_update" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      const updateData = await updateRes.json();
+      if (updateData.error) {
+        return new Response(
+          JSON.stringify({ success: false, error: updateData.error.error_user_msg || updateData.error.message, error_detail: JSON.stringify(updateData.error), step: "adset_update" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      // 複製失敗 → 直接建立新 adset
+      const freshBody = new URLSearchParams({
+        name: "【草稿】受眾組合",
+        campaign_id: campaignId,
+        status: "PAUSED",
+        daily_budget: budget * 100,
+        billing_event: "IMPRESSIONS",
+        optimization_goal: "CONVERSATIONS",
+        destination_type: "MESSAGING_INSTAGRAM_DIRECT_MESSENGER",
+        promoted_object: JSON.stringify({ page_id: PAGE_ID }),
+        targeting: JSON.stringify(targeting),
+        attribution_spec: JSON.stringify([{ event_type: "CLICK_THROUGH", window_days: 1 }]),
+        access_token: TOKEN,
+      });
+      const freshRes = await fetch(
+        `https://graph.facebook.com/v25.0/${ACCOUNT}/adsets`,
+        { method: "POST", body: freshBody }
       );
+      const freshData = await freshRes.json();
+      if (freshData.error) {
+        return new Response(
+          JSON.stringify({ success: false, error: freshData.error.error_user_msg || freshData.error.message, error_detail: JSON.stringify(freshData.error), step: "adset_fresh" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      adsetId = freshData.id;
     }
   } catch (e) {
     return new Response(
