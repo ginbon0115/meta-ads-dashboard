@@ -1032,9 +1032,6 @@ function generatePlan() {
       <div style="font-size:13px; color:var(--text); line-height:1.6;">${copyMap[adType]}</div>
     </div>
     <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;">
-      <button onclick="createAdDraft()" id="createDraftBtn" style="flex:1; min-width:200px; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer;">
-        <i class="ph ph-rocket-launch"></i> 一鍵建立廣告草稿
-      </button>
       <a href="https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=893698616001048" target="_blank"
          style="display:flex; align-items:center; justify-content:center; gap:8px; background:#1877F2; color:#fff; border-radius:10px; padding:12px 20px; font-size:14px; font-weight:700; text-decoration:none;">
         <i class="ph ph-arrow-square-out"></i> Meta 後台
@@ -1043,7 +1040,6 @@ function generatePlan() {
         <i class="ph ph-copy"></i> 複製摘要
       </button>
     </div>
-    <div id="draftResult" style="display:none; margin-top:12px;"></div>
   `;
 
   const output = document.getElementById('planOutput');
@@ -1052,88 +1048,6 @@ function generatePlan() {
   toast('投廣計畫產生完成', 'success');
 }
 
-async function createAdDraft() {
-  const sel = document.getElementById('planReelSelect');
-  const opt = sel?.options[sel.selectedIndex];
-  if (!opt || !opt.dataset.reel) { toast('請先選擇影片', 'error'); return; }
-  const reel = JSON.parse(opt.dataset.reel);
-  const adType = document.querySelector('input[name="planAdType"]:checked')?.value || 'engagement';
-  const budget = parseInt(document.getElementById('planBudget').value) || 300;
-  const days = adType === 'reach' ? 7 : adType === 'engagement' ? 5 : 3;
-
-  const btn = document.getElementById('createDraftBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="ph ph-circle-notch" style="animation:spin 1s linear infinite"></i> 建立中...';
-
-  try {
-    const res = await fetch('/api/create-ad-draft', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        reel_id: reel.id,
-        reel_permalink: reel.permalink,
-        ad_type: adType,
-        budget,
-        days,
-        caption: reel.caption || ''
-      })
-    });
-    const data = await res.json();
-    const resultDiv = document.getElementById('draftResult');
-    resultDiv.style.display = 'block';
-    if (data.success) {
-      const campaignId = data.campaign_id || '';
-      const managerUrl = data.manager_url || (campaignId
-        ? `https://adsmanager.facebook.com/adsmanager/manage/adsets?act=893698616001048&selected_campaign_ids=${campaignId}`
-        : `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=893698616001048`);
-      if (data.partial) {
-        resultDiv.innerHTML = `
-          <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:10px; padding:14px 16px;">
-            <div style="font-size:13px; font-weight:700; color:#92400e; margin-bottom:6px;">🟡 Campaign + 廣告組合已建立</div>
-            <div style="font-size:12px; color:#78350f; margin-bottom:10px;">進入 Meta 後台，點「建立廣告」→ 選你的 Reel → 按發布，就完成了。</div>
-            <a href="${managerUrl}" target="_blank" style="background:#1877F2; color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-              <i class="ph ph-arrow-square-out"></i> 去 Meta 後台選素材
-            </a>
-          </div>`;
-        toast('🟡 Campaign 建立完成，請去 Meta 後台加素材', 'info');
-      } else {
-        resultDiv.innerHTML = `
-          <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-            <div>
-              <div style="font-size:13px; font-weight:700; color:#16a34a;">✅ 草稿已建立！正在開啟 Meta 後台...</div>
-              <div style="font-size:12px; color:#166534; margin-top:3px;">Campaign ID: ${campaignId}</div>
-            </div>
-            <a href="${managerUrl}" target="_blank" id="goToManagerBtn" style="background:#1877F2; color:#fff; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:6px;">
-              <i class="ph ph-arrow-square-out"></i> 前往發布
-            </a>
-          </div>`;
-        toast('✅ 草稿已建立！正在開啟 Meta 後台...', 'success');
-      }
-      // 1 秒後自動開新分頁跳轉到 Meta 廣告管理員
-      setTimeout(() => {
-        window.open(managerUrl, '_blank');
-      }, 1000);
-    } else {
-      const stepMsg = data.step ? `步驟「${data.step}」` : '建立';
-      const errMsg = data.error || '未知錯誤';
-      const errDetail = data.error_detail ? `<div style="margin-top:6px; font-size:11px; color:#991b1b; background:#fff1f2; border-radius:6px; padding:6px 8px; font-family:monospace; white-space:pre-wrap; word-break:break-all;">${escapeHtml(data.error_detail)}</div>` : '';
-      resultDiv.innerHTML = `<div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:10px; padding:14px; color:#dc2626; font-size:13px;">
-        <div style="font-weight:700; margin-bottom:4px;">❌ ${stepMsg}失敗</div>
-        <div>${escapeHtml(errMsg)}</div>
-        ${errDetail}
-      </div>`;
-      toast(`❌ ${stepMsg}失敗：${errMsg}`, 'error');
-    }
-  } catch(e) {
-    const resultDiv = document.getElementById('draftResult');
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = `<div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:10px; padding:14px; color:#dc2626; font-size:13px;">❌ 網路錯誤：${escapeHtml(e.message)}</div>`;
-    toast('網路錯誤：' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="ph ph-rocket-launch"></i> 一鍵建立廣告草稿';
-  }
-}
 
 function copyPlanSummary() {
   const sel = document.getElementById('planReelSelect');
