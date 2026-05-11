@@ -3,6 +3,7 @@ export async function onRequestPost(context) {
   const TOKEN = env.META_ACCESS_TOKEN;
   const ACCOUNT = "act_893698616001048";
   const IG_ACTOR_ID = "17841453561052646";
+  const PAGE_ID = "248488591682054";
 
   // Audience IDs（2026-05-11 更新，全部有效）
   const AUDIENCES = {
@@ -200,11 +201,6 @@ export async function onRequestPost(context) {
   }
 
   // ── Step 3: Ad Creative ───────────────────────────────────────────────────
-  // 已知問題：instagram_actor_id 直接傳 IG ID 會報「must be a valid Instagram account id」
-  // 根本原因：廣告帳號的 /instagram_accounts 為空，IG 帳號未直接授權給廣告帳號
-  // 解法：用 Page ID（248488591682054）作為 page_id，搭配 source_instagram_media_id
-  //       Meta 會自動從 Page 找到連結的 IG 帳號（已確認 connected_instagram_account 存在）
-  const PAGE_ID = "248488591682054";
   let creativeId;
   try {
     // 試法 1：page_id + source_instagram_media_id（不傳 instagram_actor_id）
