@@ -175,6 +175,7 @@ export async function onRequestPost(context) {
         billing_event: "IMPRESSIONS",
         optimization_goal: "CONVERSATIONS",
         destination_type: "MESSAGING_INSTAGRAM_DIRECT_MESSENGER",
+        bid_strategy: "LOWEST_COST_WITHOUT_CAP",
         promoted_object: JSON.stringify({ page_id: PAGE_ID }),
         targeting: JSON.stringify(targeting),
         attribution_spec: JSON.stringify([{ event_type: "CLICK_THROUGH", window_days: 1 }]),
