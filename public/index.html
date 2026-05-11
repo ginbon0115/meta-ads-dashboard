@@ -643,268 +643,58 @@ function toggleCollapse(id, toggleRow) {
 }
 
 function renderCampaignSections(data) {
-  const messaging = data.filter(c => getAdType(c.objective) === 'messaging');
-  const conversion = data.filter(c => getAdType(c.objective) === 'conversion');
-  const reach = data.filter(c => getAdType(c.objective) === 'reach');
-  const other = data.filter(c => getAdType(c.objective) === 'other');
+  if (!data.length) {
+    document.getElementById('campaignSections').innerHTML =
+      `<div class="empty-state"><i class="ph ph-magnifying-glass"></i>目前沒有廣告活動資料</div>`;
+    return;
+  }
 
-  let html = '';
+  // 按花費排序，有花費的先
+  const sorted = [...data].sort((a, b) => b.spend - a.spend);
+  const withSpend = sorted.filter(c => c.spend > 0);
+  const noSpend   = sorted.filter(c => c.spend === 0);
 
-  if (messaging.length > 0) {
-    const spend = messaging.reduce((s, c) => s + c.spend, 0);
-    const msgs = messaging.reduce((s, c) => s + c.messages, 0);
-    const cpm = msgs > 0 ? spend / msgs : null;
-    html += `
+  const rowFn = c => {
+    const cpp = c.cost_per_message;
+    const cppStr = cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>';
+    return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
+      <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
+      <td>${statusBadge(c.status)}</td>
+      <td class="num">${fmtNTD(c.spend)}</td>
+      <td class="num">${fmtNum(c.messages)}</td>
+      <td class="num">${cppStr}</td>
+    </tr>`;
+  };
+
+  let tbodyHtml = withSpend.map(rowFn).join('');
+
+  if (noSpend.length > 0) {
+    const hiddenRows = noSpend.map(c =>
+      rowFn(c).replace('<tr ', `<tr data-collapse="collapse-all" style="display:none;" `)
+    ).join('');
+    tbodyHtml += `
+      <tr onclick="toggleCollapse('collapse-all')" style="cursor:pointer;">
+        <td colspan="5" style="padding:10px 16px;text-align:center;color:var(--text-2);font-size:12px;border-top:1px dashed var(--border);user-select:none;">
+          <span id="collapse-all-label">＋ ${noSpend.length} 個暫停／零花費活動</span>
+          <i id="collapse-all-icon" class="ph ph-caret-down" style="margin-left:4px;font-size:11px;"></i>
+        </td>
+      </tr>
+      ${hiddenRows}`;
+  }
+
+  document.getElementById('campaignSections').innerHTML = `
     <div class="ad-section">
-      <div class="ad-section-header">
-        <div class="ad-section-title">
-          <div class="ad-section-icon icon-msg"><i class="ph ph-chat-circle-dots"></i></div>
-          <div>
-            <div class="ad-section-name">私訊廣告</div>
-            <div class="ad-section-desc">目標：讓人私訊詢問 → 加 LINE 群 → 團購</div>
-          </div>
-        </div>
-        <span class="ad-count-badge">${messaging.length} 個活動</span>
-      </div>
-      <div class="section-kpi-row">
-        <div class="section-kpi">
-          <div class="section-kpi-label">花費</div>
-          <div class="section-kpi-val">${fmtNTD(spend)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">私訊數</div>
-          <div class="section-kpi-val">${fmtNum(msgs)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">每私訊成本</div>
-          <div class="section-kpi-val ${msgCostClass(cpm)}">${fmtNTD(cpm)}</div>
-          <div class="section-kpi-sub">${cpm ? (cpm < 8 ? '優秀' : cpm < 15 ? '良好' : '需優化') : '—'}</div>
-        </div>
-      </div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table>
             <thead>
-              <tr>
-                <th>活動名稱</th><th>狀態</th><th>花費</th><th>私訊數</th><th>每私訊成本</th>
-              </tr>
+              <tr><th>活動名稱</th><th>狀態</th><th>花費</th><th>私訊數</th><th>每私訊成本</th></tr>
             </thead>
-            <tbody>
-              ${renderTableRows(messaging, c => {
-                const cpp = c.cost_per_message;
-                const cppStr = cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>';
-                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
-                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
-                  <td>${statusBadge(c.status)}</td>
-                  <td class="num">${fmtNTD(c.spend)}</td>
-                  <td class="num">${fmtNum(c.messages)}</td>
-                  <td class="num">${cppStr}</td>
-                </tr>`;
-              }, 'messaging')}
-            </tbody>
+            <tbody>${tbodyHtml}</tbody>
           </table>
         </div>
       </div>
     </div>`;
-  }
-
-  if (conversion.length > 0) {
-    const spend = conversion.reduce((s, c) => s + c.spend, 0);
-    const revenue = conversion.reduce((s, c) => s + (c.revenue || 0), 0);
-    const purchases = conversion.reduce((s, c) => s + (c.purchases || 0), 0);
-    const roas = spend > 0 && revenue > 0 ? revenue / spend : null;
-    html += `
-    <div class="ad-section">
-      <div class="ad-section-header">
-        <div class="ad-section-title">
-          <div class="ad-section-icon icon-conv"><i class="ph ph-shopping-cart"></i></div>
-          <div>
-            <div class="ad-section-name">轉換廣告</div>
-            <div class="ad-section-desc">目標：直接購買 → Pixel 追蹤真實 ROAS</div>
-          </div>
-        </div>
-        <span class="ad-count-badge">${conversion.length} 個活動</span>
-      </div>
-      <div class="section-kpi-row">
-        <div class="section-kpi">
-          <div class="section-kpi-label">花費</div>
-          <div class="section-kpi-val">${fmtNTD(spend)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">購買次數</div>
-          <div class="section-kpi-val">${fmtNum(purchases)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">追蹤營收</div>
-          <div class="section-kpi-val">${fmtNTD(revenue)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">整體 ROAS</div>
-          <div class="section-kpi-val ${roasClass(roas)}">${fmtROAS(roas)}</div>
-          <div class="section-kpi-sub">${roas ? (roas >= 3 ? '優秀' : roas >= 2 ? '良好' : '需優化') : '尚無 Pixel 數據'}</div>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>活動名稱</th><th>狀態</th><th>花費</th><th>購買次數</th><th>追蹤營收</th><th>ROAS</th><th>每購成本</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${renderTableRows(conversion, c => {
-                const roasStr = c.roas !== null ? `<span class="${roasClass(c.roas)}">${fmtROAS(c.roas)}</span>` : '<span class="num-muted">—</span>';
-                const cppStr = c.cost_per_purchase !== null ? fmtNTD(c.cost_per_purchase) : '<span class="num-muted">—</span>';
-                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
-                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
-                  <td>${statusBadge(c.status)}</td>
-                  <td class="num">${fmtNTD(c.spend)}</td>
-                  <td class="num">${fmtNum(c.purchases)}</td>
-                  <td class="num">${fmtNTD(c.revenue)}</td>
-                  <td class="num">${roasStr}</td>
-                  <td class="num">${cppStr}</td>
-                </tr>`;
-              }, 'conversion')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      ${roas === null && conversion.some(c => c.spend > 0) ? `
-      <div style="margin-top:12px;padding:12px 16px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:10px;font-size:12px;color:#8B5CF6;display:flex;align-items:flex-start;gap:8px;">
-        <i class="ph ph-info" style="margin-top:1px;flex-shrink:0;"></i>
-        <span>ROAS 顯示「—」代表 Meta Pixel 尚未回傳購買事件。請確認購買頁面有安裝 Pixel，且廣告目標設為「購買」轉換。</span>
-      </div>` : ''}
-    </div>`;
-  }
-
-  if (reach.length > 0) {
-    const spend = reach.reduce((s, c) => s + c.spend, 0);
-    const totalReach = reach.reduce((s, c) => s + c.reach, 0);
-    const totalImpr = reach.reduce((s, c) => s + c.impressions, 0);
-    const avgCPM = totalImpr > 0 ? spend / totalImpr * 1000 : null;
-    html += `
-    <div class="ad-section">
-      <div class="ad-section-header">
-        <div class="ad-section-title">
-          <div class="ad-section-icon icon-reach"><i class="ph ph-megaphone"></i></div>
-          <div>
-            <div class="ad-section-name">觸及廣告</div>
-            <div class="ad-section-desc">目標：擴大品牌曝光 → 累積潛在受眾</div>
-          </div>
-        </div>
-        <span class="ad-count-badge">${reach.length} 個活動</span>
-      </div>
-      <div class="section-kpi-row">
-        <div class="section-kpi">
-          <div class="section-kpi-label">花費</div>
-          <div class="section-kpi-val">${fmtNTD(spend)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">觸及人數</div>
-          <div class="section-kpi-val">${fmtNum(totalReach)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">曝光次數</div>
-          <div class="section-kpi-val">${fmtNum(totalImpr)}</div>
-        </div>
-        <div class="section-kpi">
-          <div class="section-kpi-label">CPM</div>
-          <div class="section-kpi-val ${cpmClass(avgCPM)}">${fmtNTD(avgCPM)}</div>
-          <div class="section-kpi-sub">每千次曝光成本</div>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>活動名稱</th><th>狀態</th><th>花費</th><th>觸及人數</th><th>曝光次數</th><th>CPM</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${renderTableRows(reach, c => {
-                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
-                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
-                  <td>${statusBadge(c.status)}</td>
-                  <td class="num">${fmtNTD(c.spend)}</td>
-                  <td class="num">${fmtNum(c.reach)}</td>
-                  <td class="num">${fmtNum(c.impressions)}</td>
-                  <td class="num ${cpmClass(c.cpm)}">${fmtNTD(c.cpm)}</td>
-                </tr>`;
-              }, 'reach')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  if (other.length > 0 && (messaging.length === 0 && conversion.length === 0 && reach.length === 0)) {
-    html += `
-    <div class="ad-section">
-      <div class="table-wrap">
-        <div class="table-header">
-          <div class="table-title"><i class="ph ph-list-bullets"></i> 所有廣告活動</div>
-        </div>
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>活動名稱</th><th>狀態</th><th>目標</th><th>花費</th><th>觸及</th><th>私訊數</th><th>每私訊成本</th></tr></thead>
-            <tbody>
-              ${other.map(c => {
-                const cpp = c.cost_per_message;
-                return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
-                  <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
-                  <td>${statusBadge(c.status)}</td>
-                  <td class="num-muted">${c.objective || '—'}</td>
-                  <td class="num">${fmtNTD(c.spend)}</td>
-                  <td class="num">${fmtNum(c.reach)}</td>
-                  <td class="num">${fmtNum(c.messages)}</td>
-                  <td class="num">${cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>'}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
-  } else if (other.length > 0) {
-    html += `
-    <div class="ad-section">
-      <div class="ad-section-header">
-        <div class="ad-section-title">
-          <div class="ad-section-icon" style="background:var(--surface-2);color:var(--text-2);"><i class="ph ph-list-bullets"></i></div>
-          <div>
-            <div class="ad-section-name">其他廣告</div>
-            <div class="ad-section-desc">目標類型未分類</div>
-          </div>
-        </div>
-        <span class="ad-count-badge">${other.length} 個活動</span>
-      </div>
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>活動名稱</th><th>狀態</th><th>目標</th><th>花費</th><th>觸及</th></tr></thead>
-            <tbody>
-              ${other.map(c => `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
-                <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
-                <td>${statusBadge(c.status)}</td>
-                <td class="num-muted">${c.objective || '—'}</td>
-                <td class="num">${fmtNTD(c.spend)}</td>
-                <td class="num">${fmtNum(c.reach)}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  if (!html) {
-    html = `<div class="empty-state"><i class="ph ph-magnifying-glass"></i>目前沒有廣告活動資料</div>`;
-  }
-
-  document.getElementById('campaignSections').innerHTML = html;
 }
 
 // 時間範圍標籤對應
