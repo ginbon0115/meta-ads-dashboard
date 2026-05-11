@@ -68,7 +68,7 @@ export async function onRequestPost(context) {
       name: campaignName,
       objective: "OUTCOME_ENGAGEMENT",
       status: "PAUSED",
-      special_ad_categories: JSON.stringify([]),
+      special_ad_categories: JSON.stringify(["TAIWAN_UNIVERSAL"]),
       is_adset_budget_sharing_enabled: "false",
       access_token: TOKEN,
     });
@@ -159,6 +159,7 @@ export async function onRequestPost(context) {
         promoted_object: JSON.stringify({ page_id: PAGE_ID }),
         targeting: JSON.stringify(targeting),
         attribution_spec: JSON.stringify([{ event_type: "CLICK_THROUGH", window_days: 1 }]),
+        geo_regulated_categories: JSON.stringify(["TAIWAN_UNIVERSAL"]),
         access_token: TOKEN,
       });
       const freshRes = await fetch(
