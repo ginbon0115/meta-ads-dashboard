@@ -483,20 +483,6 @@ td { padding: 13px 14px; white-space: nowrap; vertical-align: middle; }
       </div>
     </div>
 
-    <!-- 區塊三：預算試算機 -->
-    <div style="background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px;">
-      <div style="font-size:15px; font-weight:700; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-        <i class="ph ph-calculator" style="color:var(--accent); font-size:18px;"></i>
-        預算試算機
-      </div>
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-        <span style="font-size:13px; font-weight:600; color:var(--text-2);">日預算 NT$</span>
-        <input type="number" id="calcBudgetInput" value="300" style="width:100px; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; padding:8px 12px; font-size:14px; font-family:inherit; color:var(--text); font-weight:700; outline:none;">
-        <button onclick="runCalc()" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;">試算</button>
-      </div>
-      <div id="calcResult" style="display:none; display:grid; grid-template-columns:repeat(3,1fr); gap:12px;"></div>
-    </div>
-
   </div>
 </div>
 
@@ -1102,22 +1088,50 @@ async function loadMonitor() {
     }
     list.innerHTML = active.map(c => {
       const cpp = c.cost_per_message;
-      let decision, dColor, dBg;
-      if (cpp === null) { decision = '無私訊資料'; dColor = '#888'; dBg = '#f5f5f5'; }
-      else if (cpp <= target) { decision = '🟢 繼續投'; dColor = '#16a34a'; dBg = '#f0fdf4'; }
-      else if (cpp <= target * 1.5) { decision = '🟡 觀察'; dColor = '#d97706'; dBg = '#fffbeb'; }
-      else { decision = '🔴 建議停投'; dColor = '#dc2626'; dBg = '#fef2f2'; }
+      const cpm = c.cpm;
+      const ctr = c.ctr;
+      const reach = c.reach;
 
-      return `<div style="background:${dBg}; border:1px solid ${dColor}33; border-radius:10px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(c.name)}</div>
-          <div style="font-size:12px; color:var(--text-2); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap;">
-            <span>花費 <b>NT$${Math.round(c.spend).toLocaleString()}</b></span>
-            ${c.messages > 0 ? `<span>私訊 <b>${c.messages}</b> 則</span>` : ''}
-            ${cpp !== null ? `<span>每私訊 <b style="color:${dColor};">NT$${cpp.toFixed(0)}</b></span>` : ''}
+      // 收集問題原因
+      const issues = [];
+      if (cpp !== null && cpp > target * 1.5) issues.push(`每私訊 NT$${cpp.toFixed(0)} 超標 → 換素材或受眾`);
+      if (ctr !== null && ctr < 1) issues.push(`點擊率 ${ctr.toFixed(1)}% 偏低 → Reel 前 3 秒可能沒 hook`);
+      if (cpm !== null && cpm > 300) issues.push(`CPM NT$${cpm.toFixed(0)} 偏高 → 受眾太小或競爭太激烈`);
+      if (reach > 0 && reach < 500) issues.push(`觸及 ${reach.toLocaleString()} 人偏少 → 考慮提高預算`);
+
+      // 整體決策
+      let decision, dColor, dBg;
+      if (cpp === null && ctr === null) {
+        decision = '數據累積中'; dColor = '#888'; dBg = '#f5f5f5';
+      } else if (issues.length === 0 && cpp !== null && cpp <= target) {
+        decision = '🟢 繼續投'; dColor = '#16a34a'; dBg = '#f0fdf4';
+      } else if (cpp !== null && cpp <= target * 1.5 && issues.length <= 1) {
+        decision = '🟡 觀察'; dColor = '#d97706'; dBg = '#fffbeb';
+      } else {
+        decision = '🔴 建議停投'; dColor = '#dc2626'; dBg = '#fef2f2';
+      }
+
+      const statsHtml = [
+        cpp !== null ? `<span>每私訊 <b style="color:${cpp > target ? '#dc2626' : '#16a34a'};">NT$${cpp.toFixed(0)}</b></span>` : '',
+        cpm !== null ? `<span>CPM <b style="color:${cpm > 300 ? '#dc2626' : cpm > 150 ? '#d97706' : '#16a34a'};">NT$${cpm.toFixed(0)}</b></span>` : '',
+        ctr !== null ? `<span>CTR <b style="color:${ctr < 1 ? '#dc2626' : ctr < 3 ? '#d97706' : '#16a34a'};">${ctr.toFixed(1)}%</b></span>` : '',
+        reach > 0 ? `<span>觸及 <b>${reach.toLocaleString()} 人</b></span>` : '',
+        c.messages > 0 ? `<span>私訊 <b>${c.messages} 則</b></span>` : '',
+      ].filter(Boolean).join('');
+
+      const issuesHtml = issues.length > 0
+        ? `<div style="margin-top:8px; display:flex; flex-direction:column; gap:4px;">${issues.map(i => `<div style="font-size:11px; color:${dColor}; background:${dColor}11; border-radius:6px; padding:4px 8px;">⚠ ${escapeHtml(i)}</div>`).join('')}</div>`
+        : '';
+
+      return `<div style="background:${dBg}; border:1px solid ${dColor}33; border-radius:12px; padding:14px 16px; margin-bottom:10px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(c.name)}</div>
+            <div style="font-size:12px; color:var(--text-2); margin-top:5px; display:flex; gap:12px; flex-wrap:wrap;">${statsHtml}</div>
+            ${issuesHtml}
           </div>
+          <div style="font-size:13px; font-weight:800; color:${dColor}; white-space:nowrap; padding-top:2px;">${decision}</div>
         </div>
-        <div style="font-size:13px; font-weight:800; color:${dColor}; white-space:nowrap;">${decision}</div>
       </div>`;
     }).join('');
   } catch(e) {
@@ -1125,32 +1139,6 @@ async function loadMonitor() {
   }
 }
 
-function runCalc() {
-  const budget = parseInt(document.getElementById('calcBudgetInput').value) || 300;
-  // 台灣 FB 廣告平均參數（保守估計）
-  const cpm = 80; // NT$80 per 1000 impressions
-  const msgRate = 0.002; // 0.2% of reach send message
-  const joinRate = 0.75; // 75% of messages join group
-
-  const reach = Math.round(budget / cpm * 1000);
-  const messages = Math.round(reach * msgRate);
-  const joins = Math.round(messages * joinRate);
-
-  const result = document.getElementById('calcResult');
-  result.style.display = 'grid';
-  result.innerHTML = [
-    { label: '預估觸及', value: fmtNum(reach) + ' 人', sub: `以 CPM NT$${cpm} 估算`, color: 'var(--blue)' },
-    { label: '預估私訊', value: messages + ' 則', sub: `觸及人數 × 0.2%`, color: 'var(--accent)' },
-    { label: '預估進群', value: joins + ' 人', sub: `私訊中約 75% 加入`, color: 'var(--success)' },
-  ].map(item => `
-    <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center;">
-      <div style="font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">${item.label}</div>
-      <div style="font-size:22px; font-weight:800; color:${item.color};">${item.value}</div>
-      <div style="font-size:11px; color:var(--text-2); margin-top:4px;">${item.sub}</div>
-    </div>
-  `).join('');
-  toast('試算完成', 'success');
-}
 
 function getActionInfo(action) {
   return {
