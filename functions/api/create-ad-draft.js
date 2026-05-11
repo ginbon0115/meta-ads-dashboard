@@ -4,18 +4,21 @@ export async function onRequestPost(context) {
   const ACCOUNT = "act_893698616001048";
   const IG_ACTOR_ID = "17841453561052646";
 
-  // Audience IDs
-  // buyers: 從 act_893698616001048 建立的 1shop購買者名單（2026-05-11 更新，1333筆）
-  // lookalike_1p / video_view_25 / ig_profile: 舊帳號 ID，目前無效，暫時跳過
+  // Audience IDs（2026-05-11 更新，全部有效）
   const AUDIENCES = {
-    lookalike_1p: "6940464644325",    // 無效，保留 ID 供未來恢復用
-    video_view_25: "6940463971925",   // 無效，保留 ID 供未來恢復用
-    ig_profile: "6940450050925",      // 無效，保留 ID 供未來恢復用
-    buyers: "120244278842650375",     // 有效：1shop購買者名單
+    lookalike_1p: "120244307160720375",  // 類似廣告受眾 (1%) - 1shop購買者名單
+    video_view_25: "120244307204000375", // 水果導社群的相關影片
+    ig_profile: "120244307153430375",    // IG商業檔案近365天互動過
+    buyers: "120244278842650375",        // 1shop購買者名單
   };
 
-  // 目前有效的受眾 ID（無效 ID 先排除，避免 adset 建立失敗）
-  const VALID_AUDIENCE_IDS = new Set(["120244278842650375"]);
+  // 目前有效的受眾 ID
+  const VALID_AUDIENCE_IDS = new Set([
+    "120244307160720375",
+    "120244307204000375",
+    "120244307153430375",
+    "120244278842650375",
+  ]);
 
   let body;
   try {
@@ -145,8 +148,9 @@ export async function onRequestPost(context) {
 
     const targeting = {
       geo_locations: { countries: ["TW"] },
-      age_min: 25,
+      age_min: 28,
       age_max: 44,
+      genders: [2], // 1=男, 2=女
     };
     // 只有過濾後有有效受眾才傳，空陣列不傳（Meta 會報錯）
     if (validInclude.length > 0) {
