@@ -603,6 +603,45 @@ function updateSummaryKPIs(data) {
   set('kpiActive', activeCount.toString(), '個活動執行中');
 }
 
+// 產生 table rows，有花費的先顯示，無花費的折疊
+function renderTableRows(campaigns, rowFn, sectionId) {
+  const withSpend = campaigns.filter(c => c.spend > 0);
+  const noSpend = campaigns.filter(c => c.spend === 0);
+  let html = withSpend.map(rowFn).join('');
+  if (noSpend.length > 0) {
+    const collapseId = `collapse-${sectionId}`;
+    const hiddenRows = noSpend.map(c =>
+      rowFn(c).replace('<tr ', `<tr data-collapse="${collapseId}" style="display:none;" `)
+    ).join('');
+    html += `
+      <tr onclick="toggleCollapse('${collapseId}')" style="cursor:pointer;">
+        <td colspan="99" style="padding:10px 16px;text-align:center;color:var(--text-2);font-size:12px;border-top:1px dashed var(--border);user-select:none;">
+          <span id="${collapseId}-label">＋ ${noSpend.length} 個暫停／零花費活動</span>
+          <i id="${collapseId}-icon" class="ph ph-caret-down" style="margin-left:4px;font-size:11px;"></i>
+        </td>
+      </tr>
+      ${hiddenRows}
+    `;
+  }
+  return html;
+}
+
+function toggleCollapse(id, toggleRow) {
+  const rows = document.querySelectorAll(`tr[data-collapse="${id}"]`);
+  const label = document.getElementById(`${id}-label`);
+  const icon = document.getElementById(`${id}-icon`);
+  const isHidden = rows[0]?.style.display === 'none';
+  rows.forEach(r => r.style.display = isHidden ? '' : 'none');
+  const count = rows.length;
+  if (isHidden) {
+    label.textContent = `－ 收合 ${count} 個活動`;
+    icon.className = 'ph ph-caret-up';
+  } else {
+    label.textContent = `＋ ${count} 個暫停／零花費活動`;
+    icon.className = 'ph ph-caret-down';
+  }
+}
+
 function renderCampaignSections(data) {
   const messaging = data.filter(c => getAdType(c.objective) === 'messaging');
   const conversion = data.filter(c => getAdType(c.objective) === 'conversion');
@@ -651,7 +690,7 @@ function renderCampaignSections(data) {
               </tr>
             </thead>
             <tbody>
-              ${messaging.map(c => {
+              ${renderTableRows(messaging, c => {
                 const cpp = c.cost_per_message;
                 const cppStr = cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>';
                 return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
@@ -661,7 +700,7 @@ function renderCampaignSections(data) {
                   <td class="num">${fmtNum(c.messages)}</td>
                   <td class="num">${cppStr}</td>
                 </tr>`;
-              }).join('')}
+              }, 'messaging')}
             </tbody>
           </table>
         </div>
@@ -714,7 +753,7 @@ function renderCampaignSections(data) {
               </tr>
             </thead>
             <tbody>
-              ${conversion.map(c => {
+              ${renderTableRows(conversion, c => {
                 const roasStr = c.roas !== null ? `<span class="${roasClass(c.roas)}">${fmtROAS(c.roas)}</span>` : '<span class="num-muted">—</span>';
                 const cppStr = c.cost_per_purchase !== null ? fmtNTD(c.cost_per_purchase) : '<span class="num-muted">—</span>';
                 return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
@@ -726,7 +765,7 @@ function renderCampaignSections(data) {
                   <td class="num">${roasStr}</td>
                   <td class="num">${cppStr}</td>
                 </tr>`;
-              }).join('')}
+              }, 'conversion')}
             </tbody>
           </table>
         </div>
@@ -784,7 +823,7 @@ function renderCampaignSections(data) {
               </tr>
             </thead>
             <tbody>
-              ${reach.map(c => {
+              ${renderTableRows(reach, c => {
                 return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
                   <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
                   <td>${statusBadge(c.status)}</td>
@@ -793,7 +832,7 @@ function renderCampaignSections(data) {
                   <td class="num">${fmtNum(c.impressions)}</td>
                   <td class="num ${cpmClass(c.cpm)}">${fmtNTD(c.cpm)}</td>
                 </tr>`;
-              }).join('')}
+              }, 'reach')}
             </tbody>
           </table>
         </div>
