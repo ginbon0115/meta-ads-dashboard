@@ -649,10 +649,16 @@ function renderCampaignSections(data) {
     return;
   }
 
-  // 按花費排序，有花費的先
-  const sorted = [...data].sort((a, b) => b.spend - a.spend);
-  const withSpend = sorted.filter(c => c.spend > 0);
-  const noSpend   = sorted.filter(c => c.spend === 0);
+  // 執行中 或 有花費 → 顯示；暫停且零花費 → 折疊
+  const sorted = [...data].sort((a, b) => {
+    // 執行中排最前，其次按花費降序
+    const aActive = a.status === 'ACTIVE' ? 1 : 0;
+    const bActive = b.status === 'ACTIVE' ? 1 : 0;
+    if (bActive !== aActive) return bActive - aActive;
+    return b.spend - a.spend;
+  });
+  const withSpend = sorted.filter(c => c.status === 'ACTIVE' || c.spend > 0);
+  const noSpend   = sorted.filter(c => c.status !== 'ACTIVE' && c.spend === 0);
 
   const rowFn = c => {
     const cpp = c.cost_per_message;
