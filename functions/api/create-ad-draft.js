@@ -109,10 +109,10 @@ export async function onRequestPost(context) {
   }
 
   // ── Step 2: Ad Set（複製 template adset，繞過台灣廣告主驗證）────────────────
-  // Template adset 120239729095080375：巧克力-2 campaign 底下的組合
-  // optimization_goal=POST_ENGAGEMENT, attribution_spec=1-day click
-  // 已通過台灣合規，複製可繼承合規狀態
-  const TEMPLATE_ADSET_ID = "120239729095080375";
+  // Template adset 120243110991180375：（4/21）淨淨&荷康 campaign 底下的組合
+  // optimization_goal=CONVERSATIONS, destination_type=MESSAGING_INSTAGRAM_DIRECT_MESSENGER
+  // 女性25-48，台灣，購物行為+媽媽受眾，7天歸因 → 小赫成效最好的公式
+  const TEMPLATE_ADSET_ID = "120243110991180375";
 
   let adsetId;
   try {
