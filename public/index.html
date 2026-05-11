@@ -661,14 +661,16 @@ function renderCampaignSections(data) {
   const noSpend   = sorted.filter(c => c.status !== 'ACTIVE' && c.spend === 0);
 
   const rowFn = c => {
-    const cpp = c.cost_per_message;
-    const cppStr = cpp !== null ? `<span class="${msgCostClass(cpp)}">${fmtNTD(cpp)}</span>` : '<span class="num-muted">—</span>';
+    const cpmStr = c.cpm !== null ? fmtNTD(c.cpm) : '<span class="num-muted">—</span>';
+    const ctrStr = c.ctr !== null ? `${c.ctr.toFixed(2)}%` : '<span class="num-muted">—</span>';
+    const roasStr = c.roas !== null ? `<span class="${roasClass(c.roas)}">${fmtROAS(c.roas)}</span>` : '<span class="num-muted">—</span>';
     return `<tr data-id="${c.id}" onclick="selectCampaign('${c.id}')">
       <td><div class="campaign-name" title="${c.name}">${c.name}</div></td>
       <td>${statusBadge(c.status)}</td>
       <td class="num">${fmtNTD(c.spend)}</td>
-      <td class="num">${fmtNum(c.messages)}</td>
-      <td class="num">${cppStr}</td>
+      <td class="num">${cpmStr}</td>
+      <td class="num">${ctrStr}</td>
+      <td class="num">${roasStr}</td>
     </tr>`;
   };
 
@@ -680,7 +682,7 @@ function renderCampaignSections(data) {
     ).join('');
     tbodyHtml += `
       <tr onclick="toggleCollapse('collapse-all')" style="cursor:pointer;">
-        <td colspan="5" style="padding:10px 16px;text-align:center;color:var(--text-2);font-size:12px;border-top:1px dashed var(--border);user-select:none;">
+        <td colspan="6" style="padding:10px 16px;text-align:center;color:var(--text-2);font-size:12px;border-top:1px dashed var(--border);user-select:none;">
           <span id="collapse-all-label">＋ ${noSpend.length} 個暫停／零花費活動</span>
           <i id="collapse-all-icon" class="ph ph-caret-down" style="margin-left:4px;font-size:11px;"></i>
         </td>
@@ -694,7 +696,7 @@ function renderCampaignSections(data) {
         <div class="table-scroll">
           <table>
             <thead>
-              <tr><th>活動名稱</th><th>狀態</th><th>花費</th><th>私訊數</th><th>每私訊成本</th></tr>
+              <tr><th>活動名稱</th><th>狀態</th><th>花費</th><th>CPM</th><th>CTR</th><th>ROAS</th></tr>
             </thead>
             <tbody>${tbodyHtml}</tbody>
           </table>
