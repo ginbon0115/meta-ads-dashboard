@@ -41,10 +41,12 @@ export async function onRequestPost(context) {
   const campaignName = `【草稿】${shortCaption} - ${ad_type} - ${dateStr}`;
 
   // Objective mapping
+  // 全部用 OUTCOME_ENGAGEMENT，才能複製 template adset（120239729095080375 是 ENGAGEMENT）
+  // reach/conversion 只是受眾策略不同，objective 一致才不會 Objective Mismatch
   const objectiveMap = {
-    reach: "OUTCOME_REACH",
+    reach: "OUTCOME_ENGAGEMENT",
     engagement: "OUTCOME_ENGAGEMENT",
-    conversion: "OUTCOME_SALES",
+    conversion: "OUTCOME_ENGAGEMENT",
   };
 
   // Optimization goal mapping
