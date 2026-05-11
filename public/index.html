@@ -614,13 +614,16 @@ function updateSummaryKPIs(data) {
 
   // 一句話總結
   const banner = document.getElementById('summaryBanner');
+  banner.classList.remove('loaded');
+  banner.innerHTML = '';
+  const periodLabel = PRESET_LABELS[currentDatePreset] || currentDatePreset;
   if (totalSpend > 0 && totalMsg > 0) {
     const costLabel = avgCostPerMsg < 10 ? '非常划算' : avgCostPerMsg < 15 ? '表現良好' : '需要優化';
     const dotColor = avgCostPerMsg < 10 ? 'dot-green' : avgCostPerMsg < 15 ? 'dot-yellow' : 'dot-red';
-    banner.innerHTML = `這個時段共花了 <strong>${fmtNTD(totalSpend)}</strong>，換來 <strong>${fmtNum(totalMsg)} 個人</strong>來私訊，平均每人花 <strong>${fmtNTD(avgCostPerMsg)}</strong>。<span class="dot ${dotColor}" style="margin-left:6px;"></span><span style="font-size:12px;color:var(--text-2);">${costLabel}</span>`;
+    banner.innerHTML = `${periodLabel}共花了 <strong>${fmtNTD(totalSpend)}</strong>，換來 <strong>${fmtNum(totalMsg)} 個人</strong>來私訊，平均每人花 <strong>${fmtNTD(avgCostPerMsg)}</strong>。<span class="dot ${dotColor}" style="margin-left:6px;"></span><span style="font-size:12px;color:var(--text-2);">${costLabel}</span>`;
     banner.classList.add('loaded');
   } else if (totalSpend > 0) {
-    banner.innerHTML = `這個時段共花了 <strong>${fmtNTD(totalSpend)}</strong>，目前尚未有私訊數據回傳。`;
+    banner.innerHTML = `${periodLabel}共花了 <strong>${fmtNTD(totalSpend)}</strong>，目前尚未有私訊數據回傳。`;
     banner.classList.add('loaded');
   }
 
@@ -637,28 +640,6 @@ function updateSummaryKPIs(data) {
   set('kpiActive', activeCount.toString(), '支廣告執行中');
 }
 
-// 產生 table rows，有花費的先顯示，無花費的折疊
-function renderTableRows(campaigns, rowFn, sectionId) {
-  const withSpend = campaigns.filter(c => c.spend > 0);
-  const noSpend = campaigns.filter(c => c.spend === 0);
-  let html = withSpend.map(rowFn).join('');
-  if (noSpend.length > 0) {
-    const collapseId = `collapse-${sectionId}`;
-    const hiddenRows = noSpend.map(c =>
-      rowFn(c).replace('<tr ', `<tr data-collapse="${collapseId}" style="display:none;" `)
-    ).join('');
-    html += `
-      <tr onclick="toggleCollapse('${collapseId}')" style="cursor:pointer;">
-        <td colspan="99" style="padding:10px 16px;text-align:center;color:var(--text-2);font-size:12px;border-top:1px dashed var(--border);user-select:none;">
-          <span id="${collapseId}-label">＋ ${noSpend.length} 個暫停／零花費活動</span>
-          <i id="${collapseId}-icon" class="ph ph-caret-down" style="margin-left:4px;font-size:11px;"></i>
-        </td>
-      </tr>
-      ${hiddenRows}
-    `;
-  }
-  return html;
-}
 
 function toggleCollapse(id, toggleRow) {
   const rows = document.querySelectorAll(`tr[data-collapse="${id}"]`);
